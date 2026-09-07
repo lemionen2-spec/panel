@@ -31,6 +31,7 @@ import {
   Timer,
   Video,
   ClipboardList,
+  Pencil,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -57,14 +58,14 @@ const LOGO_DATA_URI =
    Mock data
 --------------------------------------------------------- */
 const STUDENTS = [
-  { id: 1, name: "Elif Yıldırım", handle: "@elifyildirim", stage: "2. Ay+", avatar: "EY", phone: "+90 532 111 22 33", email: "elif.yildirim@gmail.com", niche: "Kişisel gelişim içerikleri", nextCall: "Bugün 14:00", notes: "Reels tempo çalışması yapıyoruz, hook'lar geliştirildi. Sonraki hafta hedefi: 3 viral deneme." },
-  { id: 2, name: "Mert Kaya", handle: "@mertkaya.fit", stage: "1. Ay", avatar: "MK", phone: "+90 533 222 33 44", email: "mert.kaya@gmail.com", niche: "Fitness koçluğu", nextCall: "Bugün 16:30", notes: "Profil biyografisi ve vurgu renkleri netleşti. Bu hafta ilk 5 gönderi planı hazırlanacak." },
-  { id: 3, name: "Zeynep Arslan", handle: "@zeyneparslan", stage: "2. Ay+", avatar: "ZA", phone: "+90 534 333 44 55", email: "zeynep.arslan@gmail.com", niche: "Dijital pazarlama", nextCall: "Yarın 10:00", notes: "Gelir hedefine göre teklif sayfası revize edildi." },
-  { id: 4, name: "Burak Demir", handle: "@burakdemir", stage: "1. Ay", avatar: "BD", phone: "+90 535 444 55 66", email: "burak.demir@gmail.com", niche: "Emlak danışmanlığı", nextCall: "Perşembe 11:00", notes: "İlk görüşme yapıldı, hedef kitle netleştirme aşamasında." },
-  { id: 5, name: "Selin Öztürk", handle: "@selinozturk", stage: "2. Ay+", avatar: "SÖ", phone: "+90 536 555 66 77", email: "selin.ozturk@gmail.com", niche: "Moda & stil", nextCall: "Cuma 13:00", notes: "Aylık rapor hazırlandı, onay bekleniyor." },
-  { id: 6, name: "Onur Şahin", handle: "@onursahin", stage: "1. Ay", avatar: "OŞ", phone: "+90 537 666 77 88", email: "onur.sahin@gmail.com", niche: "Yazılım kariyeri", nextCall: "Pazartesi 15:00", notes: "İçerik takvimi taslağı paylaşıldı." },
-  { id: 7, name: "Aylin Koç", handle: "@aylinkoc", stage: "2. Ay+", avatar: "AK", phone: "+90 538 777 88 99", email: "aylin.koc@gmail.com", niche: "Anne & bebek", nextCall: "Salı 09:30", notes: "Reels performansı %40 arttı, strateji sabit tutulacak." },
-  { id: 8, name: "Kerem Yavuz", handle: "@keremyavuz", stage: "1. Ay", avatar: "KY", phone: "+90 539 888 99 00", email: "kerem.yavuz@gmail.com", niche: "Kişisel finans", nextCall: "Çarşamba 17:00", notes: "Marka sesi çalışması tamamlandı." },
+  { id: 1, name: "Elif Yıldırım", handle: "@elifyildirim", monthNumber: 7, avatar: "EY", phone: "+90 532 111 22 33", email: "elif.yildirim@gmail.com", niche: "Kişisel gelişim içerikleri", nextCall: "Bugün 14:00", notes: "Reels tempo çalışması yapıyoruz, hook'lar geliştirildi. Sonraki hafta hedefi: 3 viral deneme." },
+  { id: 2, name: "Mert Kaya", handle: "@mertkaya.fit", monthNumber: 1, avatar: "MK", phone: "+90 533 222 33 44", email: "mert.kaya@gmail.com", niche: "Fitness koçluğu", nextCall: "Bugün 16:30", notes: "Profil biyografisi ve vurgu renkleri netleşti. Bu hafta ilk 5 gönderi planı hazırlanacak." },
+  { id: 3, name: "Zeynep Arslan", handle: "@zeyneparslan", monthNumber: 20, avatar: "ZA", phone: "+90 534 333 44 55", email: "zeynep.arslan@gmail.com", niche: "Dijital pazarlama", nextCall: "Yarın 10:00", notes: "Gelir hedefine göre teklif sayfası revize edildi." },
+  { id: 4, name: "Burak Demir", handle: "@burakdemir", monthNumber: 1, avatar: "BD", phone: "+90 535 444 55 66", email: "burak.demir@gmail.com", niche: "Emlak danışmanlığı", nextCall: "Perşembe 11:00", notes: "İlk görüşme yapıldı, hedef kitle netleştirme aşamasında." },
+  { id: 5, name: "Selin Öztürk", handle: "@selinozturk", monthNumber: 14, avatar: "SÖ", phone: "+90 536 555 66 77", email: "selin.ozturk@gmail.com", niche: "Moda & stil", nextCall: "Cuma 13:00", notes: "Aylık rapor hazırlandı, onay bekleniyor." },
+  { id: 6, name: "Onur Şahin", handle: "@onursahin", monthNumber: 1, avatar: "OŞ", phone: "+90 537 666 77 88", email: "onur.sahin@gmail.com", niche: "Yazılım kariyeri", nextCall: "Pazartesi 15:00", notes: "İçerik takvimi taslağı paylaşıldı." },
+  { id: 7, name: "Aylin Koç", handle: "@aylinkoc", monthNumber: 9, avatar: "AK", phone: "+90 538 777 88 99", email: "aylin.koc@gmail.com", niche: "Anne & bebek", nextCall: "Salı 09:30", notes: "Reels performansı %40 arttı, strateji sabit tutulacak." },
+  { id: 8, name: "Kerem Yavuz", handle: "@keremyavuz", monthNumber: 1, avatar: "KY", phone: "+90 539 888 99 00", email: "kerem.yavuz@gmail.com", niche: "Kişisel finans", nextCall: "Çarşamba 17:00", notes: "Marka sesi çalışması tamamlandı." },
 ];
 
 const PENDING_REPORTS = [
@@ -89,8 +90,8 @@ const NAV_ITEMS = [
 /* ---------------------------------------------------------
    Small building blocks
 --------------------------------------------------------- */
-function Badge({ stage }) {
-  const isVeteran = stage === "2. Ay+";
+function Badge({ month }) {
+  const isVeteran = month >= 2;
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-medium"
@@ -100,7 +101,7 @@ function Badge({ stage }) {
       }}
     >
       <CircleDot size={11} strokeWidth={3} />
-      {stage}
+      {month}. Ay
     </span>
   );
 }
@@ -799,7 +800,7 @@ function AddStudentModal({ onClose, onAdd }) {
   const [niche, setNiche] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [stage, setStage] = useState("1. Ay");
+  const [monthNumber, setMonthNumber] = useState("1");
   const [error, setError] = useState("");
 
   const handleSubmit = () => {
@@ -818,7 +819,7 @@ function AddStudentModal({ onClose, onAdd }) {
       id: Date.now(),
       name: name.trim(),
       handle: handle.trim() || "@yeniöğrenci",
-      stage,
+      monthNumber: Number(monthNumber) || 1,
       avatar: initials || "ÖĞ",
       phone: phone.trim() || "—",
       email: email.trim() || "—",
@@ -900,17 +901,16 @@ function AddStudentModal({ onClose, onAdd }) {
             </div>
             <div>
               <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
-                Abonelik
+                Kaçıncı ayında?
               </label>
-              <select
-                value={stage}
-                onChange={(e) => setStage(e.target.value)}
-                className="w-full appearance-none rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              <input
+                type="number"
+                min="1"
+                value={monthNumber}
+                onChange={(e) => setMonthNumber(e.target.value)}
+                className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
                 style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
-              >
-                <option>1. Ay</option>
-                <option>2. Ay+</option>
-              </select>
+              />
             </div>
           </div>
           <div>
@@ -941,8 +941,7 @@ function AddStudentModal({ onClose, onAdd }) {
   );
 }
 
-function StudentsPage({ openStudent }) {
-  const [students, setStudents] = useState(STUDENTS);
+function StudentsPage({ students, setStudents, openStudent }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("Tümü");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -951,7 +950,8 @@ function StudentsPage({ openStudent }) {
     const matchesQuery =
       s.name.toLowerCase().includes(query.toLowerCase()) ||
       s.handle.toLowerCase().includes(query.toLowerCase());
-    const matchesFilter = filter === "Tümü" || s.stage === filter;
+    const matchesFilter =
+      filter === "Tümü" || (filter === "1. Ay" ? s.monthNumber === 1 : s.monthNumber >= 2);
     return matchesQuery && matchesFilter;
   });
 
@@ -1035,7 +1035,7 @@ function StudentsPage({ openStudent }) {
               </p>
 
               <div className="mt-3.5 flex items-center justify-between">
-                <Badge stage={s.stage} />
+                <Badge month={s.monthNumber} />
                 <span className="flex items-center gap-1.5 text-[12.5px]" style={{ color: inkSoft }}>
                   <Clock size={13} />
                   {s.nextCall}
@@ -1303,9 +1303,124 @@ function ContentDeliveryDate() {
 /* ---------------------------------------------------------
    Student detail page
 --------------------------------------------------------- */
-function StudentDetail({ student, back }) {
+function EditStudentModal({ student, onClose, onSave }) {
+  const [name, setName] = useState(student.name);
+  const [handle, setHandle] = useState(student.handle);
+  const [niche, setNiche] = useState(student.niche);
+  const [phone, setPhone] = useState(student.phone);
+  const [email, setEmail] = useState(student.email);
+  const [error, setError] = useState("");
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
+      setError("Ad soyad zorunludur.");
+      return;
+    }
+    onSave({
+      name: name.trim(),
+      handle: handle.trim(),
+      niche: niche.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: "rgba(31,27,29,0.4)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[440px] rounded-2xl bg-white p-6"
+        style={{ boxShadow: cardShadow }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <p className="text-[17px] font-semibold" style={{ color: ink }}>
+            Öğrenci bilgilerini düzenle
+          </p>
+          <button onClick={onClose} style={{ color: inkSoft }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Ad Soyad
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Instagram kullanıcı adı
+            </label>
+            <input
+              value={handle}
+              onChange={(e) => setHandle(e.target.value)}
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Niş / sektör
+            </label>
+            <input
+              value={niche}
+              onChange={(e) => setNiche(e.target.value)}
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Telefon
+            </label>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              E-posta
+            </label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+
+          {error && (
+            <p className="rounded-lg px-3 py-2 text-[12.5px]" style={{ background: "#F4E7E5", color: "#B3453A" }}>
+              {error}
+            </p>
+          )}
+
+          <PrimaryButton full onClick={handleSubmit}>
+            Değişiklikleri kaydet
+          </PrimaryButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StudentDetail({ student, onUpdateStudent, back }) {
   const [fileName, setFileName] = useState(null);
   const [loomLink, setLoomLink] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const firstName = student.name.split(" ")[0];
   const calendarLink = "https://calendar.google.com/appointments/sifirdanzirveye-demo";
@@ -1337,7 +1452,7 @@ function StudentDetail({ student, back }) {
               <h1 className="text-[22px] font-semibold" style={{ color: ink }}>
                 {student.name}
               </h1>
-              <Badge stage={student.stage} />
+              <Badge month={student.monthNumber} />
             </div>
             <p className="mt-0.5 text-[14px]" style={{ color: inkSoft }}>
               {student.handle} · {student.niche}
@@ -1345,6 +1460,9 @@ function StudentDetail({ student, back }) {
           </div>
         </div>
         <div className="flex flex-wrap justify-end gap-2">
+          <GhostButton icon={Pencil} onClick={() => setShowEditModal(true)}>
+            Düzenle
+          </GhostButton>
           <GhostButton icon={Phone}>{student.phone}</GhostButton>
           <GhostButton icon={Mail}>{student.email}</GhostButton>
           <a
@@ -1359,6 +1477,17 @@ function StudentDetail({ student, back }) {
           </a>
         </div>
       </div>
+
+      {showEditModal && (
+        <EditStudentModal
+          student={student}
+          onClose={() => setShowEditModal(false)}
+          onSave={(updates) => {
+            onUpdateStudent(student.id, updates);
+            setShowEditModal(false);
+          }}
+        />
+      )}
 
       <div className="grid grid-cols-[1.3fr_1fr] gap-5">
         <div className="flex flex-col gap-5">
@@ -1466,7 +1595,7 @@ function StudentDetail({ student, back }) {
             <SectionTitle>Abonelik</SectionTitle>
             <div className="flex items-center justify-between text-[14px]">
               <span style={{ color: inkSoft }}>Durum</span>
-              <Badge stage={student.stage} />
+              <Badge month={student.monthNumber} />
             </div>
             {(() => {
               const last = PAYMENTS_SEED.filter((p) => p.studentId === student.id).sort((a, b) =>
@@ -1979,18 +2108,25 @@ function NotificationToast({ toast, onClose }) {
 --------------------------------------------------------- */
 export default function App() {
   const [page, setPage] = useState("dashboard");
-  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [students, setStudents] = useState(STUDENTS);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [toast, setToast] = useState(null);
 
   const showToast = (title, body) => setToast({ title, body });
 
+  const selectedStudent = students.find((s) => s.id === selectedStudentId) || null;
+
   const openStudent = (s) => {
-    setSelectedStudent(s);
+    setSelectedStudentId(s.id);
     setPage("student-detail");
   };
 
+  const updateStudent = (id, updates) => {
+    setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+  };
+
   const setActive = (id) => {
-    setSelectedStudent(null);
+    setSelectedStudentId(null);
     setPage(id);
   };
 
@@ -1998,9 +2134,12 @@ export default function App() {
 
   let content;
   if (page === "dashboard") content = <Dashboard openStudent={openStudent} showToast={showToast} />;
-  else if (page === "students") content = <StudentsPage openStudent={openStudent} />;
+  else if (page === "students")
+    content = <StudentsPage students={students} setStudents={setStudents} openStudent={openStudent} />;
   else if (page === "student-detail")
-    content = <StudentDetail student={selectedStudent} back={() => setPage("students")} />;
+    content = (
+      <StudentDetail student={selectedStudent} onUpdateStudent={updateStudent} back={() => setPage("students")} />
+    );
   else if (page === "calendar") content = <CalendarPage />;
   else if (page === "payments") content = <PaymentsPage showToast={showToast} />;
   else if (page === "settings") content = <SettingsPage showToast={showToast} />;
