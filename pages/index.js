@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import AdminPanel from '../ogrenci-yonetim-paneli.jsx';
-import StudentPanel from '../ogrenci-tarafi-akisi.jsx';
+import AdminPanel from './ogrenci-yonetim-paneli.jsx';
+import StudentPanel from './ogrenci-tarafi-akisi.jsx';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('admin');
