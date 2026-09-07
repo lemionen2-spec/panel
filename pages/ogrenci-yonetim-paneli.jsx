@@ -58,14 +58,14 @@ const LOGO_DATA_URI =
    Mock data
 --------------------------------------------------------- */
 const STUDENTS = [
-  { id: 1, name: "Elif Yıldırım", handle: "@elifyildirim", monthNumber: 7, avatar: "EY", phone: "+90 532 111 22 33", email: "elif.yildirim@gmail.com", niche: "Kişisel gelişim içerikleri", nextCall: "Bugün 14:00", notes: "Reels tempo çalışması yapıyoruz, hook'lar geliştirildi. Sonraki hafta hedefi: 3 viral deneme." },
-  { id: 2, name: "Mert Kaya", handle: "@mertkaya.fit", monthNumber: 1, avatar: "MK", phone: "+90 533 222 33 44", email: "mert.kaya@gmail.com", niche: "Fitness koçluğu", nextCall: "Bugün 16:30", notes: "Profil biyografisi ve vurgu renkleri netleşti. Bu hafta ilk 5 gönderi planı hazırlanacak." },
-  { id: 3, name: "Zeynep Arslan", handle: "@zeyneparslan", monthNumber: 20, avatar: "ZA", phone: "+90 534 333 44 55", email: "zeynep.arslan@gmail.com", niche: "Dijital pazarlama", nextCall: "Yarın 10:00", notes: "Gelir hedefine göre teklif sayfası revize edildi." },
-  { id: 4, name: "Burak Demir", handle: "@burakdemir", monthNumber: 1, avatar: "BD", phone: "+90 535 444 55 66", email: "burak.demir@gmail.com", niche: "Emlak danışmanlığı", nextCall: "Perşembe 11:00", notes: "İlk görüşme yapıldı, hedef kitle netleştirme aşamasında." },
-  { id: 5, name: "Selin Öztürk", handle: "@selinozturk", monthNumber: 14, avatar: "SÖ", phone: "+90 536 555 66 77", email: "selin.ozturk@gmail.com", niche: "Moda & stil", nextCall: "Cuma 13:00", notes: "Aylık rapor hazırlandı, onay bekleniyor." },
-  { id: 6, name: "Onur Şahin", handle: "@onursahin", monthNumber: 1, avatar: "OŞ", phone: "+90 537 666 77 88", email: "onur.sahin@gmail.com", niche: "Yazılım kariyeri", nextCall: "Pazartesi 15:00", notes: "İçerik takvimi taslağı paylaşıldı." },
-  { id: 7, name: "Aylin Koç", handle: "@aylinkoc", monthNumber: 9, avatar: "AK", phone: "+90 538 777 88 99", email: "aylin.koc@gmail.com", niche: "Anne & bebek", nextCall: "Salı 09:30", notes: "Reels performansı %40 arttı, strateji sabit tutulacak." },
-  { id: 8, name: "Kerem Yavuz", handle: "@keremyavuz", monthNumber: 1, avatar: "KY", phone: "+90 539 888 99 00", email: "kerem.yavuz@gmail.com", niche: "Kişisel finans", nextCall: "Çarşamba 17:00", notes: "Marka sesi çalışması tamamlandı." },
+  { id: 1, name: "Elif Yıldırım", handle: "@elifyildirim", monthNumber: 7, gender: "Kadın", avatar: "EY", phone: "+90 532 111 22 33", email: "elif.yildirim@gmail.com", niche: "Kişisel gelişim içerikleri", nextCall: "Bugün 14:00", notes: "Reels tempo çalışması yapıyoruz, hook'lar geliştirildi. Sonraki hafta hedefi: 3 viral deneme." },
+  { id: 2, name: "Mert Kaya", handle: "@mertkaya.fit", monthNumber: 1, gender: "Erkek", avatar: "MK", phone: "+90 533 222 33 44", email: "mert.kaya@gmail.com", niche: "Fitness koçluğu", nextCall: "Bugün 16:30", notes: "Profil biyografisi ve vurgu renkleri netleşti. Bu hafta ilk 5 gönderi planı hazırlanacak." },
+  { id: 3, name: "Zeynep Arslan", handle: "@zeyneparslan", monthNumber: 20, gender: "Kadın", avatar: "ZA", phone: "+90 534 333 44 55", email: "zeynep.arslan@gmail.com", niche: "Dijital pazarlama", nextCall: "Yarın 10:00", notes: "Gelir hedefine göre teklif sayfası revize edildi." },
+  { id: 4, name: "Burak Demir", handle: "@burakdemir", monthNumber: 1, gender: "Erkek", avatar: "BD", phone: "+90 535 444 55 66", email: "burak.demir@gmail.com", niche: "Emlak danışmanlığı", nextCall: "Perşembe 11:00", notes: "İlk görüşme yapıldı, hedef kitle netleştirme aşamasında." },
+  { id: 5, name: "Selin Öztürk", handle: "@selinozturk", monthNumber: 14, gender: "Kadın", avatar: "SÖ", phone: "+90 536 555 66 77", email: "selin.ozturk@gmail.com", niche: "Moda & stil", nextCall: "Cuma 13:00", notes: "Aylık rapor hazırlandı, onay bekleniyor." },
+  { id: 6, name: "Onur Şahin", handle: "@onursahin", monthNumber: 1, gender: "Erkek", avatar: "OŞ", phone: "+90 537 666 77 88", email: "onur.sahin@gmail.com", niche: "Yazılım kariyeri", nextCall: "Pazartesi 15:00", notes: "İçerik takvimi taslağı paylaşıldı." },
+  { id: 7, name: "Aylin Koç", handle: "@aylinkoc", monthNumber: 9, gender: "Kadın", avatar: "AK", phone: "+90 538 777 88 99", email: "aylin.koc@gmail.com", niche: "Anne & bebek", nextCall: "Salı 09:30", notes: "Reels performansı %40 arttı, strateji sabit tutulacak." },
+  { id: 8, name: "Kerem Yavuz", handle: "@keremyavuz", monthNumber: 1, gender: "Erkek", avatar: "KY", phone: "+90 539 888 99 00", email: "kerem.yavuz@gmail.com", niche: "Kişisel finans", nextCall: "Çarşamba 17:00", notes: "Marka sesi çalışması tamamlandı." },
 ];
 
 const PENDING_REPORTS = [
@@ -801,6 +801,7 @@ function AddStudentModal({ onClose, onAdd }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [monthNumber, setMonthNumber] = useState("1");
+  const [gender, setGender] = useState("Kadın");
   const [error, setError] = useState("");
 
   const handleSubmit = () => {
@@ -820,6 +821,7 @@ function AddStudentModal({ onClose, onAdd }) {
       name: name.trim(),
       handle: handle.trim() || "@yeniöğrenci",
       monthNumber: Number(monthNumber) || 1,
+      gender,
       avatar: initials || "ÖĞ",
       phone: phone.trim() || "—",
       email: email.trim() || "—",
@@ -901,17 +903,31 @@ function AddStudentModal({ onClose, onAdd }) {
             </div>
             <div>
               <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
-                Kaçıncı ayında?
+                Cinsiyet
               </label>
-              <input
-                type="number"
-                min="1"
-                value={monthNumber}
-                onChange={(e) => setMonthNumber(e.target.value)}
-                className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="w-full appearance-none rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
                 style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
-              />
+              >
+                <option>Kadın</option>
+                <option>Erkek</option>
+              </select>
             </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Kaçıncı ayında?
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={monthNumber}
+              onChange={(e) => setMonthNumber(e.target.value)}
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
@@ -1309,6 +1325,7 @@ function EditStudentModal({ student, onClose, onSave }) {
   const [niche, setNiche] = useState(student.niche);
   const [phone, setPhone] = useState(student.phone);
   const [email, setEmail] = useState(student.email);
+  const [gender, setGender] = useState(student.gender || "Kadın");
   const [error, setError] = useState("");
 
   const handleSubmit = () => {
@@ -1322,6 +1339,7 @@ function EditStudentModal({ student, onClose, onSave }) {
       niche: niche.trim(),
       phone: phone.trim(),
       email: email.trim(),
+      gender,
     });
   };
 
@@ -1392,6 +1410,20 @@ function EditStudentModal({ student, onClose, onSave }) {
           </div>
           <div>
             <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Cinsiyet
+            </label>
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="w-full appearance-none rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            >
+              <option>Kadın</option>
+              <option>Erkek</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
               E-posta
             </label>
             <input
@@ -1423,12 +1455,14 @@ function StudentDetail({ student, onUpdateStudent, back }) {
   const [showEditModal, setShowEditModal] = useState(false);
 
   const firstName = student.name.split(" ")[0];
+  const honorific = student.gender === "Kadın" ? "Hanım" : student.gender === "Erkek" ? "Bey" : "";
+  const greetingName = honorific ? `${firstName} ${honorific}` : firstName;
   const calendarLink = "https://calendar.google.com/appointments/sifirdanzirveye-demo";
-  const appointmentMessage = `Merhaba ${firstName}, online görüşmemiz için uygun saatinizi şu linkten seçebilirsiniz: ${calendarLink}`;
+  const appointmentMessage = `Merhaba ${greetingName}, online görüşmemiz için uygun saatinizi şu linkten seçebilirsiniz: ${calendarLink}`;
   const whatsappPhone = student.phone.replace(/[^\d]/g, "");
   const appointmentWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(appointmentMessage)}`;
 
-  const deliveryMessage = `Merhaba ${firstName}, yeni döneme ait içerik metinleriniz hazırlandı. Panelinizden inceleyebilirsiniz: [Panel Linki]${
+  const deliveryMessage = `Merhaba ${greetingName}, yeni döneme ait içerik metinleriniz hazırlandı. Panelinizden inceleyebilirsiniz: [Panel Linki]${
     loomLink ? `\nAçıklama videosu: ${loomLink}` : ""
   }`;
   const deliveryWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(deliveryMessage)}`;
@@ -1465,16 +1499,28 @@ function StudentDetail({ student, onUpdateStudent, back }) {
           </GhostButton>
           <GhostButton icon={Phone}>{student.phone}</GhostButton>
           <GhostButton icon={Mail}>{student.email}</GhostButton>
-          <a
-            href={appointmentWaLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-medium text-white hover:opacity-90"
-            style={{ background: green }}
-          >
-            <MessageCircle size={16} />
-            Randevu iste (WhatsApp)
-          </a>
+          {whatsappPhone ? (
+            <a
+              href={appointmentWaLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-medium text-white hover:opacity-90"
+              style={{ background: green }}
+            >
+              <MessageCircle size={16} />
+              Randevu iste (WhatsApp)
+            </a>
+          ) : (
+            <button
+              disabled
+              title="Önce bu öğrencinin telefon numarasını 'Düzenle' ile ekle"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-medium text-white opacity-40"
+              style={{ background: green }}
+            >
+              <MessageCircle size={16} />
+              Randevu iste (telefon eksik)
+            </button>
+          )}
         </div>
       </div>
 
