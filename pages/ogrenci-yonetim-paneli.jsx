@@ -1,97 +1,74 @@
 import React, { useState } from 'react';
-import { 
-  Users, Calendar, CreditCard, Settings, Plus, Search, 
-  MoreVertical, CheckCircle2, Clock, AlertCircle, ArrowUpRight,
-  GraduationCap, MessageSquare, ShieldCheck, ChevronRight
-} from 'lucide-react';
 
-export default function StudentManagementPanel() {
-  const [activeTab, setActiveTab] = useState('overview');
+export default function AdminPanel() {
+  const [activeSubTab, setActiveSubTab] = useState('dashboard');
   const [showAddModal, setShowAddModal] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 text-white p-2 rounded-lg">
-            <GraduationCap className="w-6 h-6" />
-          </div>
+    <div style={{ fontFamily: 'sans-serif', backgroundColor: '#f3f4f6', minHeight: '100vh', padding: '24px' }}>
+      {/* Profil Barı */}
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '20px', marginBottom: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 className="text-xl font-bold">Koçluk Yönetim Paneli</h1>
-            <p className="text-xs text-gray-500">Lemi Önen • Yücel</p>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>Lemi Önen</h1>
+            <p style={{ color: '#6b7280', margin: '4px 0 0 0', fontSize: '14px' }}>@lemi.onen • Koçluk Programı</p>
+          </div>
+          <button 
+            onClick={() => setShowAddModal(true)}
+            style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
+          >
+            + Öğrenci Ekle
+          </button>
+        </div>
+      </div>
+
+      {/* Alt Menü Tabları */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        {['Ana Sayfa', 'Öğrencilerim', 'Takvim & Randevular', 'Ödemeler', 'Ayarlar'].map((tab, idx) => (
+          <button
+            key={tab}
+            onClick={() => setActiveSubTab(idx === 0 ? 'dashboard' : 'other')}
+            style={{
+              padding: '10px 16px',
+              borderRadius: '8px',
+              border: '1px solid #e5e7eb',
+              backgroundColor: (idx === 0 && activeSubTab === 'dashboard') ? '#374151' : '#ffffff',
+              color: (idx === 0 && activeSubTab === 'dashboard') ? '#ffffff' : '#374151',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Ana Kart */}
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', marginTop: 0 }}>Merhaba, Yücel</h2>
+        <p style={{ color: '#6b7280', fontSize: '14px' }}>2 Eylül Çarşamba — bugün 2 birebir görüşmen ve gönderilecek 3 dosyan var.</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '20px' }}>
+          <div style={{ backgroundColor: '#f9fafb', padding: '16px', borderRadius: '8px', border: '1px solid #f3f4f6' }}>
+            <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 'bold' }}>AKTİF ÖĞRENCİ</span>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827', marginTop: '4px' }}>24</div>
+            <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 'bold' }}>+3 bu ay</span>
           </div>
         </div>
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition"
-        >
-          <Plus className="w-4 h-4" /> Yeni Öğrenci Ekle
-        </button>
-      </header>
-
-      {/* Main Content */}
-      <main className="p-6 max-w-7xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-2">Öğrenci Yönetimi</h2>
-          <p className="text-sm text-gray-600 mb-4">Öğrencilerinizi ve süreçlerini buradan yönetebilirsiniz.</p>
-          
-          <div className="flex gap-4 border-b border-gray-200 pb-3 mb-4">
-            <button 
-              onClick={() => setActiveTab('overview')}
-              className={`text-sm font-medium pb-2 border-b-2 ${activeTab === 'overview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'}`}
-            >
-              Genel Bakış
-            </button>
-            <button 
-              onClick={() => setActiveTab('students')}
-              className={`text-sm font-medium pb-2 border-b-2 ${activeTab === 'students' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'}`}
-            >
-              Öğrenciler
-            </button>
-          </div>
-
-          <div className="text-sm text-gray-700">
-            {activeTab === 'overview' ? (
-              <p>Aktif Öğrenci Sayısı: <strong>24</strong></p>
-            ) : (
-              <p>Öğrenci listesi yükleniyor...</p>
-            )}
-          </div>
-        </div>
-      </main>
+      </div>
 
       {/* Öğrenci Ekle Modalı */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-lg font-bold mb-4">Yeni Öğrenci Ekle</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Ad Soyad</label>
-                <input type="text" placeholder="Örn: Ahmet Yılmaz" className="w-full border border-gray-300 rounded-lg p-2 text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">E-posta</label>
-                <input type="email" placeholder="ahmet@example.com" className="w-full border border-gray-300 rounded-lg p-2 text-sm" />
-              </div>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyCenter: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', width: '360px', margin: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ marginTop: 0, fontSize: '18px', fontWeight: 'bold' }}>Yeni Öğrenci Ekle</h3>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#374151', marginBottom: '4px' }}>Öğrenci Adı</label>
+              <input type="text" placeholder="Ahmet Yılmaz" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
             </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button 
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
-              >
-                İptal
-              </button>
-              <button 
-                onClick={() => {
-                  alert('Öğrenci başarıyla eklendi!');
-                  setShowAddModal(false);
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 font-medium"
-              >
-                Kaydet
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+              <button onClick={() => setShowAddModal(false)} style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #d1d5db', backgroundColor: '#fff', cursor: 'pointer' }}>İptal</button>
+              <button onClick={() => { alert('Öğrenci eklendi!'); setShowAddModal(false); }} style={{ padding: '8px 14px', borderRadius: '6px', border: 'none', backgroundColor: '#2563eb', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>Kaydet</button>
             </div>
           </div>
         </div>
