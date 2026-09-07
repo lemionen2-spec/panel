@@ -793,17 +793,172 @@ function Dashboard({ openStudent, showToast }) {
 /* ---------------------------------------------------------
    Students list page
 --------------------------------------------------------- */
+function AddStudentModal({ onClose, onAdd }) {
+  const [name, setName] = useState("");
+  const [handle, setHandle] = useState("");
+  const [niche, setNiche] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [stage, setStage] = useState("1. Ay");
+  const [error, setError] = useState("");
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
+      setError("Ad soyad zorunludur.");
+      return;
+    }
+    const initials = name
+      .trim()
+      .split(" ")
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+    onAdd({
+      id: Date.now(),
+      name: name.trim(),
+      handle: handle.trim() || "@yeniöğrenci",
+      stage,
+      avatar: initials || "ÖĞ",
+      phone: phone.trim() || "—",
+      email: email.trim() || "—",
+      niche: niche.trim() || "Belirtilmedi",
+      nextCall: "Henüz planlanmadı",
+      notes: "",
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: "rgba(31,27,29,0.4)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[440px] rounded-2xl bg-white p-6"
+        style={{ boxShadow: cardShadow }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <p className="text-[17px] font-semibold" style={{ color: ink }}>
+            Yeni öğrenci ekle
+          </p>
+          <button onClick={onClose} style={{ color: inkSoft }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Ad Soyad
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Örn. Ayşe Yılmaz"
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Instagram kullanıcı adı
+            </label>
+            <input
+              value={handle}
+              onChange={(e) => setHandle(e.target.value)}
+              placeholder="@ayseyilmaz"
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Niş / sektör
+            </label>
+            <input
+              value={niche}
+              onChange={(e) => setNiche(e.target.value)}
+              placeholder="Örn. Fitness koçluğu"
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+                Telefon
+              </label>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+90 5xx xxx xx xx"
+                className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+                style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+                Abonelik
+              </label>
+              <select
+                value={stage}
+                onChange={(e) => setStage(e.target.value)}
+                className="w-full appearance-none rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+                style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+              >
+                <option>1. Ay</option>
+                <option>2. Ay+</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              E-posta
+            </label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="ornek@eposta.com"
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+
+          {error && (
+            <p className="rounded-lg px-3 py-2 text-[12.5px]" style={{ background: "#F4E7E5", color: "#B3453A" }}>
+              {error}
+            </p>
+          )}
+
+          <PrimaryButton full onClick={handleSubmit}>
+            Öğrenciyi ekle
+          </PrimaryButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StudentsPage({ openStudent }) {
+  const [students, setStudents] = useState(STUDENTS);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("Tümü");
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  const filtered = STUDENTS.filter((s) => {
+  const filtered = students.filter((s) => {
     const matchesQuery =
       s.name.toLowerCase().includes(query.toLowerCase()) ||
       s.handle.toLowerCase().includes(query.toLowerCase());
     const matchesFilter = filter === "Tümü" || s.stage === filter;
     return matchesQuery && matchesFilter;
   });
+
+  const handleAdd = (newStudent) => {
+    setStudents((prev) => [newStudent, ...prev]);
+    setShowAddModal(false);
+  };
 
   return (
     <div className="mx-auto max-w-[1040px] px-10 py-10">
@@ -813,10 +968,12 @@ function StudentsPage({ openStudent }) {
             Öğrencilerim
           </h1>
           <p className="mt-1 text-[14px]" style={{ color: inkSoft }}>
-            {STUDENTS.length} öğrenci · Lemi Önen Koçluk Programı
+            {students.length} öğrenci · Lemi Önen Koçluk Programı
           </p>
         </div>
-        <PrimaryButton icon={Plus}>Yeni öğrenci ekle</PrimaryButton>
+        <PrimaryButton icon={Plus} onClick={() => setShowAddModal(true)}>
+          Yeni öğrenci ekle
+        </PrimaryButton>
       </div>
 
       <div className="mb-6 flex items-center gap-3">
@@ -894,6 +1051,8 @@ function StudentsPage({ openStudent }) {
           Aramanla eşleşen öğrenci bulunamadı.
         </div>
       )}
+
+      {showAddModal && <AddStudentModal onClose={() => setShowAddModal(false)} onAdd={handleAdd} />}
     </div>
   );
 }
