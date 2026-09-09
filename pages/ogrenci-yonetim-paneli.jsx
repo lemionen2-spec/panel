@@ -37,6 +37,7 @@ import {
   Trash2,
   ListChecks,
   Menu as MenuIcon,
+  Wallet,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -89,6 +90,7 @@ const NAV_ITEMS = [
   { id: "students", label: "Öğrencilerim", icon: Users },
   { id: "calendar", label: "Takvim & Randevular", icon: CalendarDays },
   { id: "payments", label: "Ödemeler", icon: CreditCard },
+  { id: "finans", label: "Finans", icon: Wallet },
   { id: "settings", label: "Ayarlar", icon: Settings },
 ];
 
@@ -2297,8 +2299,175 @@ const PAYMENTS_SEED = [
   { id: 8, studentId: 8, studentName: "Kerem Yavuz", amount: 4500, date: "2026-08-28", note: "" },
 ].map((p) => ({ ...p, nextDate: addDaysISO(p.date, 30) }));
 
-function PaymentsPage({ students, showToast }) {
-  const [payments, setPayments] = useState(PAYMENTS_SEED);
+/* ---------------------------------------------------------
+   Finans — bu ay tahsil edilen / edilecek, gelecek ay tahmini
+--------------------------------------------------------- */
+function monthKey(dateStr) {
+  return dateStr.slice(0, 7);
+}
+
+function shiftMonthKey(key, delta) {
+  const [y, m] = key.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(key) {
+  const [y, m] = key.split("-").map(Number);
+  return `${MONTHS_TR[m - 1]} ${y}`;
+}
+
+function FinansPage({ payments }) {
+  const currentMonthKey = monthKey(TODAY_ISO);
+  const nextMonthKey = shiftMonthKey(currentMonthKey, 1);
+
+  const collectedThisMonth = payments.filter((p) => monthKey(p.date) === currentMonthKey);
+  const collectedTotal = collectedThisMonth.reduce((s, p) => s + p.amount, 0);
+
+  // Her öğrencinin en son ödemesi — nextDate'i bir sonraki beklenen tahsilat
+  const latestPerStudent = Object.values(
+    payments.reduce((acc, p) => {
+      if (!acc[p.studentId] || acc[p.studentId].date < p.date) acc[p.studentId] = p;
+      return acc;
+    }, {})
+  );
+
+  const dueThisMonth = latestPerStudent.filter((p) => monthKey(p.nextDate) === currentMonthKey);
+  const dueTotal = dueThisMonth.reduce((s, p) => s + p.amount, 0);
+
+  const dueNextMonth = latestPerStudent.filter((p) => monthKey(p.nextDate) === nextMonthKey);
+  const nextMonthTotal = dueNextMonth.reduce((s, p) => s + p.amount, 0);
+
+  return (
+    <div className="mx-auto max-w-[1040px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
+      <div className="mb-8">
+        <h1 className="font-serif text-[28px] font-semibold" style={{ color: ink }}>
+          Finans
+        </h1>
+        <p className="mt-1 text-[14px]" style={{ color: inkSoft }}>
+          {monthLabel(currentMonthKey)} ayına göre tahsilat özeti
+        </p>
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="relative overflow-hidden">
+          <p className="text-[13px]" style={{ color: inkSoft }}>
+            Bu ay tahsil edilen
+          </p>
+          <p className="mt-2 text-[26px] font-semibold" style={{ color: ink }}>
+            ₺{collectedTotal.toLocaleString("tr-TR")}
+          </p>
+          <p className="mt-1 text-[12.5px] font-medium" style={{ color: green }}>
+            {collectedThisMonth.length} ödeme
+          </p>
+        </Card>
+        <Card className="relative overflow-hidden">
+          <p className="text-[13px]" style={{ color: inkSoft }}>
+            Bu ay tahsil edilecek
+          </p>
+          <p className="mt-2 text-[26px] font-semibold" style={{ color: ink }}>
+            ₺{dueTotal.toLocaleString("tr-TR")}
+          </p>
+          <p className="mt-1 text-[12.5px] font-medium" style={{ color: gold }}>
+            {dueThisMonth.length} öğrenciden bekleniyor
+          </p>
+        </Card>
+        <Card className="relative overflow-hidden">
+          <p className="text-[13px]" style={{ color: inkSoft }}>
+            {monthLabel(nextMonthKey)} tahmini gelir
+          </p>
+          <p className="mt-2 text-[26px] font-semibold" style={{ color: ink }}>
+            ₺{nextMonthTotal.toLocaleString("tr-TR")}
+          </p>
+          <p className="mt-1 text-[12.5px] font-medium" style={{ color: accent }}>
+            {dueNextMonth.length} öğrenciden bekleniyor
+          </p>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <p className="mb-3 text-[14.5px] font-semibold" style={{ color: ink }}>
+            Bu ay tahsil edilenler
+          </p>
+          <Card padded={false}>
+            {collectedThisMonth.length === 0 ? (
+              <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+                Bu ay henüz tahsilat yok.
+              </p>
+            ) : (
+              collectedThisMonth.map((p, i) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between px-6 py-3.5"
+                  style={{ borderTop: i === 0 ? "none" : `1px solid ${line}` }}
+                >
+                  <div>
+                    <p className="text-[13.5px] font-medium" style={{ color: ink }}>
+                      {p.studentName}
+                    </p>
+                    <p className="text-[12px]" style={{ color: inkSoft }}>
+                      {formatTRDate(p.date)}
+                    </p>
+                  </div>
+                  <span className="text-[13.5px] font-semibold" style={{ color: green }}>
+                    ₺{p.amount.toLocaleString("tr-TR")}
+                  </span>
+                </div>
+              ))
+            )}
+          </Card>
+        </div>
+
+        <div>
+          <p className="mb-3 text-[14.5px] font-semibold" style={{ color: ink }}>
+            Bu ay tahsil edilecekler
+          </p>
+          <Card padded={false}>
+            {dueThisMonth.length === 0 ? (
+              <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+                Bu ay için bekleyen tahsilat yok.
+              </p>
+            ) : (
+              dueThisMonth.map((p, i) => {
+                const tone = renewalTone(daysUntil(p.nextDate));
+                return (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between px-6 py-3.5"
+                    style={{ borderTop: i === 0 ? "none" : `1px solid ${line}` }}
+                  >
+                    <div>
+                      <p className="text-[13.5px] font-medium" style={{ color: ink }}>
+                        {p.studentName}
+                      </p>
+                      <p className="text-[12px]" style={{ color: inkSoft }}>
+                        {formatTRDate(p.nextDate)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="rounded-full px-2 py-1 text-[11px] font-medium"
+                        style={{ background: tone.bg, color: tone.color }}
+                      >
+                        {tone.label}
+                      </span>
+                      <span className="text-[13.5px] font-semibold" style={{ color: gold }}>
+                        ₺{p.amount.toLocaleString("tr-TR")}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaymentsPage({ students, payments, setPayments, showToast }) {
   const [studentId, setStudentId] = useState(String(students[0]?.id || ""));
   const [amount, setAmount] = useState("4500");
   const [date, setDate] = useState(TODAY_ISO);
@@ -2780,6 +2949,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [page, setPage] = useState("dashboard");
   const [students, setStudents] = useState(STUDENTS);
+  const [payments, setPayments] = useState(PAYMENTS_SEED);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -2851,7 +3021,9 @@ export default function App() {
       />
     );
   else if (page === "calendar") content = <CalendarPage students={students} />;
-  else if (page === "payments") content = <PaymentsPage students={students} showToast={showToast} />;
+  else if (page === "payments")
+    content = <PaymentsPage students={students} payments={payments} setPayments={setPayments} showToast={showToast} />;
+  else if (page === "finans") content = <FinansPage payments={payments} />;
   else if (page === "settings") content = <SettingsPage showToast={showToast} />;
 
   return (
