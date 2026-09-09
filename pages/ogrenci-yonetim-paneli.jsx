@@ -2063,6 +2063,16 @@ function formatEventDateTime(iso, allDay) {
   return `${dateStr} · ${timeStr}`;
 }
 
+function getNext7Days() {
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    days.push(d);
+  }
+  return days;
+}
+
 function CalendarPage({ students }) {
   const [showPlanner, setShowPlanner] = useState(false);
   const [range, setRange] = useState("week"); // "week" | "all"
@@ -2087,6 +2097,11 @@ function CalendarPage({ students }) {
       })
       .finally(() => setLoading(false));
   }, [range]);
+
+  const weekDays = getNext7Days();
+  const eventsByDay = weekDays.map((day) =>
+    events.filter((ev) => new Date(ev.start).toDateString() === day.toDateString())
+  );
 
   return (
     <div className="mx-auto max-w-[1040px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
@@ -2148,6 +2163,54 @@ function CalendarPage({ students }) {
             <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: "#B3453A" }}>
               Randevular çekilirken bir sorun oluştu, sayfayı yenilemeyi dener misin?
             </p>
+          ) : range === "week" ? (
+            <div className="overflow-x-auto px-6 pb-6">
+              <div className="grid min-w-[700px] grid-cols-7 gap-2">
+                {weekDays.map((day, i) => (
+                  <div key={i}>
+                    <div className="mb-2 text-center">
+                      <p className="text-[11.5px] font-medium uppercase" style={{ color: inkSoft }}>
+                        {day.toLocaleDateString("tr-TR", { weekday: "short" })}
+                      </p>
+                      <p
+                        className="mx-auto mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-semibold"
+                        style={{
+                          background: day.toDateString() === new Date().toDateString() ? accent : "transparent",
+                          color: day.toDateString() === new Date().toDateString() ? "#fff" : ink,
+                        }}
+                      >
+                        {day.getDate()}
+                      </p>
+                    </div>
+                    <div className="flex min-h-[120px] flex-col gap-1.5 rounded-lg p-1.5" style={{ background: canvas }}>
+                      {eventsByDay[i].length === 0 ? (
+                        <p className="pt-2 text-center text-[11px]" style={{ color: inkSoft }}>
+                          —
+                        </p>
+                      ) : (
+                        eventsByDay[i].map((ev) => (
+                          <a
+                            key={ev.id}
+                            href={ev.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg px-2 py-1.5 text-[11px] leading-tight transition-opacity hover:opacity-80"
+                            style={{ background: accentSoft, color: accent }}
+                          >
+                            <p className="font-semibold">
+                              {ev.allDay
+                                ? "Tüm gün"
+                                : new Date(ev.start).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                            <p className="truncate">{ev.title}</p>
+                          </a>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : events.length === 0 ? (
             <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
               Bu aralıkta planlı randevu yok.
