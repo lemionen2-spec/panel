@@ -820,7 +820,7 @@ function WorkPlanner({ students }) {
 --------------------------------------------------------- */
 const MESSAGE_TEMPLATES = [
   { id: 1, title: "İçerik teslimi", text: "Merhaba {isim}, yeni döneme ait içerik metinlerinize linki tıklayarak ulaşabilirsiniz 🎯" },
-  { id: 2, title: "Randevu talebi", text: "Merhaba {isim}, bir sonraki görüşmemiz için uygun saatinizi şu linkten seçebilir misiniz? {takvim_linki}" },
+  { id: 2, title: "Randevu talebi", text: "Merhaba {isim}, bir sonraki görüşmemiz için uygun saatinizi şu linkten seçebilir misiniz?\n\n{takvim_linki}" },
   { id: 3, title: "Ödeme hatırlatma", text: "Merhaba {isim}, aboneliğinizin yenilenme tarihi yaklaşıyor. Bir sorunuz olursa buradayım 🙌" },
   { id: 4, title: "Görüşme özeti", text: "Merhaba {isim}, bugünkü görüşmemizin özetini ve aksiyon maddelerini panelinize ekledim." },
 ];
@@ -1791,12 +1791,12 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
   const honorific = student.gender === "Kadın" ? "Hanım" : student.gender === "Erkek" ? "Bey" : "";
   const greetingName = honorific ? `${firstName} ${honorific}` : firstName;
   const calendarLink = "https://calendar.app.google/EUeXReTdmqxNUxrJ9";
-  const appointmentMessage = `Merhaba ${greetingName}, online görüşmemiz için uygun saatinizi şu linkten seçebilirsiniz: ${calendarLink}`;
+  const appointmentMessage = `Merhaba ${greetingName}, online görüşmemiz için uygun saatinizi şu linkten seçebilirsiniz:\n\n${calendarLink}`;
   const whatsappPhone = student.phone.replace(/[^\d]/g, "");
   const appointmentWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(appointmentMessage)}`;
 
-  const deliveryMessage = `Merhaba ${greetingName}, yeni döneme ait içerik metinlerinize linki tıklayarak ulaşabilirsiniz: ${fileLink}${
-    loomLink ? `\nAçıklama videosu: ${loomLink}` : ""
+  const deliveryMessage = `Merhaba ${greetingName}, yeni döneme ait içerik metinlerinize linki tıklayarak ulaşabilirsiniz:\n\n${fileLink}${
+    loomLink ? `\n\nAçıklama videosu:\n${loomLink}` : ""
   }`;
   const deliveryWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(deliveryMessage)}`;
 
