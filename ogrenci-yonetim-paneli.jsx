@@ -32,6 +32,9 @@ import {
   Video,
   ClipboardList,
   Pencil,
+  LogOut,
+  Trash2,
+  ListChecks,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -201,7 +204,7 @@ function GhostButton({ children, icon: Icon, onClick, full = false }) {
 /* ---------------------------------------------------------
    Yönetici / Koç giriş ekranı
 --------------------------------------------------------- */
-const DEMO_CREDENTIALS = { email: "yucel@sifirdanzirveye.com", password: "demo1234" };
+const DEMO_CREDENTIALS = { email: "lemi@lemionen.com", password: "lemi2026" };
 
 function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -223,8 +226,8 @@ function LoginScreen({ onLogin }) {
       setError("E-posta ve şifre alanları zorunludur.");
       return;
     }
-    if (password.length < 4) {
-      setError("Şifre en az 4 karakter olmalı.");
+    if (email.trim().toLowerCase() !== DEMO_CREDENTIALS.email || password !== DEMO_CREDENTIALS.password) {
+      setError("E-posta veya şifre hatalı.");
       return;
     }
     setError("");
@@ -319,7 +322,7 @@ function LoginScreen({ onLogin }) {
               </a>
             </div>
 
-            <PrimaryButton type="submit" full disabled={loading}>
+            <PrimaryButton type="submit" full disabled={loading} onClick={handleSubmit}>
               {loading ? "Giriş yapılıyor..." : "Giriş yap"}
             </PrimaryButton>
 
@@ -346,7 +349,7 @@ function LoginScreen({ onLogin }) {
 /* ---------------------------------------------------------
    Sidebar
 --------------------------------------------------------- */
-function Sidebar({ active, setActive }) {
+function Sidebar({ active, setActive, onLogout }) {
   return (
     <aside
       className="flex h-full w-[248px] shrink-0 flex-col justify-between py-6"
@@ -399,6 +402,14 @@ function Sidebar({ active, setActive }) {
             </p>
           </div>
         </div>
+        <button
+          onClick={onLogout}
+          className="mt-1.5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13.5px] font-medium transition-colors hover:bg-black/[0.03]"
+          style={{ color: inkSoft }}
+        >
+          <LogOut size={16} />
+          Çıkış yap
+        </button>
       </div>
     </aside>
   );
@@ -412,11 +423,11 @@ function Sidebar({ active, setActive }) {
 --------------------------------------------------------- */
 const DEFAULT_TASKS = {
   day: [
-    { id: 1, title: "Elif'in içerik metinleri", minutes: 45, done: true },
-    { id: 2, title: "Mert ile görüşme hazırlığı", minutes: 20, done: true },
-    { id: 3, title: "Zeynep'in haftalık raporu", minutes: 35, done: false },
-    { id: 4, title: "Reels çekimi — VELMORA lansmanı", minutes: 60, done: false },
-    { id: 5, title: "Yeni öğrenci onboarding maili", minutes: 15, done: false },
+    { id: 1, title: "Elif'in içerik metinleri", minutes: 45, done: true, time: "09:00" },
+    { id: 2, title: "Mert ile görüşme hazırlığı", minutes: 20, done: true, time: "10:30" },
+    { id: 3, title: "Zeynep'in haftalık raporu", minutes: 35, done: false, time: "13:00" },
+    { id: 4, title: "Reels çekimi — VELMORA lansmanı", minutes: 60, done: false, time: "15:00" },
+    { id: 5, title: "Yeni öğrenci onboarding maili", minutes: 15, done: false, time: "" },
   ],
   week: [
     { id: 101, title: "Tüm öğrencilerin haftalık içerik metinlerini hazırla", minutes: 180, done: false },
@@ -445,11 +456,36 @@ function formatDuration(mins) {
   return m ? `${h} sa ${m} dk` : `${h} sa`;
 }
 
-function WorkPlanner() {
+function timeToMinutes(t) {
+  if (!t) return null;
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function findTimeConflicts(tasks) {
+  const timed = tasks.filter((t) => !t.done && t.time);
+  const conflicts = new Set();
+  for (let i = 0; i < timed.length; i++) {
+    const aStart = timeToMinutes(timed[i].time);
+    const aEnd = aStart + (timed[i].minutes || 0);
+    for (let j = i + 1; j < timed.length; j++) {
+      const bStart = timeToMinutes(timed[j].time);
+      const bEnd = bStart + (timed[j].minutes || 0);
+      if (aStart < bEnd && bStart < aEnd) {
+        conflicts.add(timed[i].id);
+        conflicts.add(timed[j].id);
+      }
+    }
+  }
+  return conflicts;
+}
+
+function WorkPlanner({ students }) {
   const [period, setPeriod] = useState("day");
   const [tasksByPeriod, setTasksByPeriod] = useState(DEFAULT_TASKS);
   const [title, setTitle] = useState("");
   const [minutes, setMinutes] = useState("");
+  const [taskTime, setTaskTime] = useState("");
 
   const [scheduledTasks, setScheduledTasks] = useState([
     {
@@ -472,12 +508,24 @@ function WorkPlanner() {
     },
   ]);
   const [showScheduleForm, setShowScheduleForm] = useState(false);
-  const [schedStudentId, setSchedStudentId] = useState(String(STUDENTS[0].id));
+  const [schedStudentId, setSchedStudentId] = useState(String(students[0]?.id || ""));
   const [schedTitle, setSchedTitle] = useState("");
   const [schedDate, setSchedDate] = useState(TODAY_ISO);
   const [schedMinutes, setSchedMinutes] = useState("30");
 
   const tasks = tasksByPeriod[period];
+  const displayTasks =
+    period === "day"
+      ? [...tasks].sort((a, b) => {
+          const at = timeToMinutes(a.time);
+          const bt = timeToMinutes(b.time);
+          if (at === null && bt === null) return 0;
+          if (at === null) return 1;
+          if (bt === null) return -1;
+          return at - bt;
+        })
+      : tasks;
+  const conflicts = period === "day" ? findTimeConflicts(tasks) : new Set();
   const todaysScheduled = scheduledTasks.filter((t) => t.dueDate === TODAY_ISO && !t.done);
 
   const toggle = (id) =>
@@ -486,22 +534,34 @@ function WorkPlanner() {
       [period]: prev[period].map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
     }));
 
+  const deleteTask = (id) =>
+    setTasksByPeriod((prev) => ({
+      ...prev,
+      [period]: prev[period].filter((t) => t.id !== id),
+    }));
+
   const addTask = () => {
     if (!title.trim()) return;
     setTasksByPeriod((prev) => ({
       ...prev,
-      [period]: [...prev[period], { id: Date.now(), title, minutes: Number(minutes) || 30, done: false }],
+      [period]: [
+        ...prev[period],
+        { id: Date.now(), title, minutes: Number(minutes) || 30, done: false, time: period === "day" ? taskTime : "" },
+      ],
     }));
     setTitle("");
     setMinutes("");
+    setTaskTime("");
   };
 
   const toggleScheduled = (id) =>
     setScheduledTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
 
+  const deleteScheduled = (id) => setScheduledTasks((prev) => prev.filter((t) => t.id !== id));
+
   const addScheduledTask = () => {
     if (!schedTitle.trim() || !schedDate) return;
-    const student = STUDENTS.find((s) => s.id === Number(schedStudentId));
+    const student = students.find((s) => s.id === Number(schedStudentId));
     setScheduledTasks((prev) => [
       ...prev,
       {
@@ -534,6 +594,7 @@ function WorkPlanner() {
           </p>
           <p className="mt-0.5 text-[13px]" style={{ color: inkSoft }}>
             {doneCount}/{tasks.length} tamamlandı · kalan ~{formatDuration(remainingMinutes)}
+            {period === "day" && conflicts.size > 0 ? " · saat çakışması var" : ""}
           </p>
         </div>
         <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: canvas }}>
@@ -578,17 +639,20 @@ function WorkPlanner() {
               <span className="shrink-0 text-[12px] font-medium" style={{ color: gold }}>
                 {t.studentName}
               </span>
+              <button onClick={() => deleteScheduled(t.id)} style={{ color: gold }}>
+                <Trash2 size={13} />
+              </button>
             </div>
           ))}
         </div>
       )}
 
       <div className="mt-4">
-        {tasks.map((t) => (
+        {displayTasks.map((t) => (
           <div
             key={t.id}
             className="flex items-center gap-3 px-6 py-3"
-            style={{ borderTop: `1px solid ${line}` }}
+            style={{ borderTop: `1px solid ${line}`, background: conflicts.has(t.id) ? "#FDEDEC" : "transparent" }}
           >
             <button
               onClick={() => toggle(t.id)}
@@ -597,6 +661,11 @@ function WorkPlanner() {
             >
               {t.done && <Check size={12} style={{ color: "#fff" }} />}
             </button>
+            {period === "day" && (
+              <span className="w-11 shrink-0 text-[12px] font-medium" style={{ color: t.time ? ink : inkSoft }}>
+                {t.time || "—"}
+              </span>
+            )}
             <p
               className="flex-1 text-[13.5px]"
               style={{ color: t.done ? inkSoft : ink, textDecoration: t.done ? "line-through" : "none" }}
@@ -610,11 +679,23 @@ function WorkPlanner() {
               <Timer size={11} />
               {formatDuration(t.minutes)}
             </span>
+            <button onClick={() => deleteTask(t.id)} style={{ color: inkSoft }}>
+              <Trash2 size={14} />
+            </button>
           </div>
         ))}
       </div>
 
       <div className="flex items-center gap-2 px-6 py-4" style={{ borderTop: `1px solid ${line}` }}>
+        {period === "day" && (
+          <input
+            type="time"
+            value={taskTime}
+            onChange={(e) => setTaskTime(e.target.value)}
+            className="w-24 shrink-0 rounded-xl px-2.5 py-2 text-[13.5px] outline-none"
+            style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+          />
+        )}
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -664,7 +745,7 @@ function WorkPlanner() {
                 className="w-full appearance-none rounded-lg px-2.5 py-2 text-[13px] outline-none"
                 style={{ border: `1px solid ${line}`, background: "#fff", color: ink }}
               >
-                {STUDENTS.map((s) => (
+                {students.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
@@ -728,6 +809,9 @@ function WorkPlanner() {
                 >
                   {tone.label}
                 </span>
+                <button onClick={() => deleteScheduled(t.id)} style={{ color: inkSoft }}>
+                  <Trash2 size={14} />
+                </button>
               </div>
             );
           })
@@ -748,6 +832,11 @@ const MESSAGE_TEMPLATES = [
 ];
 
 function QuickMessageTemplates({ showToast }) {
+  const [templates, setTemplates] = useState(MESSAGE_TEMPLATES);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newText, setNewText] = useState("");
+
   const copy = (tpl) => {
     try {
       navigator.clipboard.writeText(tpl.text);
@@ -756,6 +845,16 @@ function QuickMessageTemplates({ showToast }) {
       showToast("Kopyalanamadı", "Metni manuel olarak seçip kopyalayabilirsin.");
     }
   };
+
+  const addTemplate = () => {
+    if (!newTitle.trim() || !newText.trim()) return;
+    setTemplates((prev) => [...prev, { id: Date.now(), title: newTitle.trim(), text: newText.trim() }]);
+    setNewTitle("");
+    setNewText("");
+    setShowAdd(false);
+  };
+
+  const deleteTemplate = (id) => setTemplates((prev) => prev.filter((t) => t.id !== id));
 
   return (
     <Card padded={false}>
@@ -768,11 +867,38 @@ function QuickMessageTemplates({ showToast }) {
             Tek tıkla kopyala, WhatsApp'a yapıştır
           </p>
         </div>
-        <ClipboardList size={18} style={{ color: inkSoft }} />
+        <button
+          onClick={() => setShowAdd((v) => !v)}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+          style={{ background: accentSoft, color: accent }}
+        >
+          <Plus size={16} />
+        </button>
       </div>
 
+      {showAdd && (
+        <div className="mx-6 mt-4 flex flex-col gap-2 rounded-xl p-3" style={{ background: canvas }}>
+          <input
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="Şablon başlığı"
+            className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
+            style={{ border: `1px solid ${line}`, background: "#fff", color: ink }}
+          />
+          <textarea
+            value={newText}
+            onChange={(e) => setNewText(e.target.value)}
+            placeholder="Mesaj metni... ({isim} gibi değişkenler kullanabilirsin)"
+            rows={2}
+            className="w-full resize-none rounded-lg px-2.5 py-2 text-[13px] outline-none"
+            style={{ border: `1px solid ${line}`, background: "#fff", color: ink }}
+          />
+          <PrimaryButton onClick={addTemplate}>Şablonu ekle</PrimaryButton>
+        </div>
+      )}
+
       <div className="mt-4">
-        {MESSAGE_TEMPLATES.map((tpl) => (
+        {templates.map((tpl) => (
           <div
             key={tpl.id}
             className="flex items-start justify-between gap-3 px-6 py-3.5"
@@ -786,13 +912,22 @@ function QuickMessageTemplates({ showToast }) {
                 {tpl.text}
               </p>
             </div>
-            <button
-              onClick={() => copy(tpl)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-              style={{ background: accentSoft, color: accent }}
-            >
-              <Copy size={14} />
-            </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                onClick={() => copy(tpl)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: accentSoft, color: accent }}
+              >
+                <Copy size={14} />
+              </button>
+              <button
+                onClick={() => deleteTemplate(tpl.id)}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: "#F4E7E5", color: "#B3453A" }}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -800,7 +935,7 @@ function QuickMessageTemplates({ showToast }) {
   );
 }
 
-function Dashboard({ openStudent, showToast }) {
+function Dashboard({ students, openStudent, showToast }) {
   const stats = [
     { label: "Aktif Öğrenci", value: "24", sub: "+3 bu ay", positive: true, arc: accent },
     { label: "Bu Ay Koçluk Geliri", value: "₺48.600", sub: "+%18 geçen aya göre", positive: true, arc: accent },
@@ -811,7 +946,7 @@ function Dashboard({ openStudent, showToast }) {
     <div className="mx-auto max-w-[1040px] px-10 py-10">
       <div className="mb-8">
         <h1 className="font-serif text-[30px] font-semibold" style={{ color: ink }}>
-          Merhaba, Yücel
+          Merhaba, Lemi
         </h1>
         <p className="mt-1.5 text-[14px]" style={{ color: inkSoft }}>
           2 Eylül Çarşamba — bugün 2 birebir görüşmen ve gönderilecek 3 dosyan var.
@@ -839,7 +974,7 @@ function Dashboard({ openStudent, showToast }) {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4">
-        <WorkPlanner />
+        <WorkPlanner students={students} />
         <QuickMessageTemplates showToast={showToast} />
       </div>
 
@@ -1154,7 +1289,7 @@ function StudentsPage({ students, setStudents, openStudent }) {
 
   return (
     <div className="mx-auto max-w-[1040px] px-10 py-10">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-serif text-[28px] font-semibold" style={{ color: ink }}>
             Öğrencilerim
@@ -1163,8 +1298,8 @@ function StudentsPage({ students, setStudents, openStudent }) {
             {students.length} öğrenci · Lemi Önen Koçluk Programı
           </p>
         </div>
-        <PrimaryButton icon={Plus} onClick={() => setShowAddModal(true)}>
-          Yeni öğrenci ekle
+        <PrimaryButton icon={Plus} onClick={() => setShowAddModal(true)} full={false}>
+          <span className="shrink-0 whitespace-nowrap">Yeni öğrenci ekle</span>
         </PrimaryButton>
       </div>
 
@@ -1183,7 +1318,7 @@ function StudentsPage({ students, setStudents, openStudent }) {
           />
         </div>
         <div className="flex items-center gap-1.5 rounded-xl p-1" style={{ background: canvas }}>
-          {["Tümü", "1. Ay", "2. Ay+"].map((f) => (
+          {["Tümü", "1. Ay", "2. Ay ve sonrası"].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -1625,10 +1760,35 @@ function EditStudentModal({ student, onClose, onSave }) {
   );
 }
 
-function StudentDetail({ student, onUpdateStudent, back }) {
+function DocLinkEditor({ student, onUpdateStudent, onDone }) {
+  const [value, setValue] = useState(student.docLink || "");
+
+  const save = () => {
+    onUpdateStudent(student.id, { docLink: value.trim() });
+    onDone();
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="https://docs.google.com/document/..."
+        className="w-full rounded-xl px-3.5 py-2.5 text-[13.5px] outline-none"
+        style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+      />
+      <PrimaryButton full onClick={save}>
+        Kaydet
+      </PrimaryButton>
+    </div>
+  );
+}
+
+function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
   const [fileName, setFileName] = useState(null);
   const [loomLink, setLoomLink] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editingDoc, setEditingDoc] = useState(false);
 
   const firstName = student.name.split(" ")[0];
   const honorific = student.gender === "Kadın" ? "Hanım" : student.gender === "Erkek" ? "Bey" : "";
@@ -1673,6 +1833,18 @@ function StudentDetail({ student, onUpdateStudent, back }) {
           <GhostButton icon={Pencil} onClick={() => setShowEditModal(true)}>
             Düzenle
           </GhostButton>
+          <button
+            onClick={() => {
+              if (window.confirm(`${student.name} adlı öğrenciyi silmek istediğine emin misin? Bu işlem geri alınamaz.`)) {
+                onDeleteStudent(student.id);
+              }
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-medium transition-colors hover:bg-black/[0.03]"
+            style={{ border: `1px solid ${line}`, color: "#B3453A" }}
+          >
+            <Trash2 size={16} />
+            Sil
+          </button>
           <GhostButton icon={Phone}>{student.phone}</GhostButton>
           <GhostButton icon={Mail}>{student.email}</GhostButton>
           {whatsappPhone ? (
@@ -1780,17 +1952,40 @@ function StudentDetail({ student, onUpdateStudent, back }) {
 
           <Card>
             <SectionTitle>Belgeler</SectionTitle>
-            <a
-              href="#"
-              className="flex items-center justify-between rounded-xl px-3.5 py-3 text-[14px] font-medium transition-colors hover:bg-black/[0.03]"
-              style={{ border: `1px solid ${line}`, color: ink }}
-            >
-              <span className="flex items-center gap-2.5">
-                <FileText size={16} style={{ color: accent }} />
-                Google Docs belgesini aç
-              </span>
-              <ExternalLink size={14} style={{ color: inkSoft }} />
-            </a>
+            <p className="mb-3 text-[12.5px] leading-relaxed" style={{ color: inkSoft }}>
+              Bu öğrenciyle ilgili detaylı notları/raporu tuttuğun Google Docs belgesinin linkini buraya yapıştır —
+              her seferinde arayıp bulmak yerine tek tıkla açarsın.
+            </p>
+            {student.docLink && editingDoc !== true ? (
+              <>
+                <a
+                  href={student.docLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between rounded-xl px-3.5 py-3 text-[14px] font-medium transition-colors hover:bg-black/[0.03]"
+                  style={{ border: `1px solid ${line}`, color: ink }}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <FileText size={16} style={{ color: accent }} />
+                    Google Docs belgesini aç
+                  </span>
+                  <ExternalLink size={14} style={{ color: inkSoft }} />
+                </a>
+                <button
+                  onClick={() => setEditingDoc(true)}
+                  className="mt-2 text-[12.5px] font-medium"
+                  style={{ color: accent }}
+                >
+                  Linki değiştir
+                </button>
+              </>
+            ) : (
+              <DocLinkEditor
+                student={student}
+                onUpdateStudent={onUpdateStudent}
+                onDone={() => setEditingDoc(false)}
+              />
+            )}
           </Card>
 
           <Card>
@@ -1866,17 +2061,23 @@ function StudentDetail({ student, onUpdateStudent, back }) {
 /* ---------------------------------------------------------
    Lightweight placeholder pages (Calendar / Payments / Settings)
 --------------------------------------------------------- */
-function CalendarPage() {
+function CalendarPage({ students }) {
   const days = ["Pzt", "Sal", "Çar", "Per", "Cum"];
+  const [showPlanner, setShowPlanner] = useState(false);
   return (
     <div className="mx-auto max-w-[1040px] px-10 py-10">
-      <div className="mb-8">
-        <h1 className="font-serif text-[28px] font-semibold" style={{ color: ink }}>
-          Takvim & Randevular
-        </h1>
-        <p className="mt-1 text-[14px]" style={{ color: inkSoft }}>
-          Hatırlatmalar açık — bu hafta 8 görüşme planlı.
-        </p>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-[28px] font-semibold" style={{ color: ink }}>
+            Takvim & Randevular
+          </h1>
+          <p className="mt-1 text-[14px]" style={{ color: inkSoft }}>
+            Hatırlatmalar açık — bu hafta 8 görüşme planlı.
+          </p>
+        </div>
+        <PrimaryButton icon={ListChecks} onClick={() => setShowPlanner((v) => !v)}>
+          {showPlanner ? "İş planlayıcıyı gizle" : "İş planlayıcıyı göster"}
+        </PrimaryButton>
       </div>
       <Card padded={false}>
         <div className="grid grid-cols-5" style={{ borderBottom: `1px solid ${line}` }}>
@@ -1912,6 +2113,12 @@ function CalendarPage() {
           ))}
         </div>
       </Card>
+
+      {showPlanner && (
+        <div className="mt-6">
+          <WorkPlanner students={students} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1957,14 +2164,16 @@ const PAYMENTS_SEED = [
   { id: 8, studentId: 8, studentName: "Kerem Yavuz", amount: 4500, date: "2026-08-28", note: "" },
 ].map((p) => ({ ...p, nextDate: addDaysISO(p.date, 30) }));
 
-function PaymentsPage({ showToast }) {
+function PaymentsPage({ students, showToast }) {
   const [payments, setPayments] = useState(PAYMENTS_SEED);
-  const [studentId, setStudentId] = useState(String(STUDENTS[0].id));
+  const [studentId, setStudentId] = useState(String(students[0]?.id || ""));
   const [amount, setAmount] = useState("4500");
   const [date, setDate] = useState(TODAY_ISO);
   const [note, setNote] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
-  const latestPerStudent = STUDENTS.map((s) => {
+  const latestPerStudent = students.map((s) => {
     const studentPayments = payments.filter((p) => p.studentId === s.id).sort((a, b) => (a.date < b.date ? 1 : -1));
     return { student: s, payment: studentPayments[0] || null };
   });
@@ -1974,8 +2183,14 @@ function PaymentsPage({ showToast }) {
     .map((x) => ({ ...x, days: daysUntil(x.payment.nextDate) }))
     .sort((a, b) => a.days - b.days);
 
+  const filteredPayments = payments.filter((p) => {
+    if (fromDate && p.date < fromDate) return false;
+    if (toDate && p.date > toDate) return false;
+    return true;
+  });
+
   const addPayment = () => {
-    const student = STUDENTS.find((s) => s.id === Number(studentId));
+    const student = students.find((s) => s.id === Number(studentId));
     if (!student || !amount || !date) return;
     const newPayment = {
       id: Date.now(),
@@ -2021,7 +2236,7 @@ function PaymentsPage({ showToast }) {
               className="w-full appearance-none rounded-xl px-3 py-2.5 text-[13.5px] outline-none"
               style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
             >
-              {STUDENTS.map((s) => (
+              {students.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
@@ -2128,33 +2343,72 @@ function PaymentsPage({ showToast }) {
 
       {/* Ödeme geçmişi */}
       <div>
-        <p className="mb-3 text-[14.5px] font-semibold" style={{ color: ink }}>
-          Ödeme geçmişi
-        </p>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[14.5px] font-semibold" style={{ color: ink }}>
+            Ödeme geçmişi
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="rounded-lg px-2.5 py-1.5 text-[12.5px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+            <span className="text-[12.5px]" style={{ color: inkSoft }}>
+              —
+            </span>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="rounded-lg px-2.5 py-1.5 text-[12.5px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+            {(fromDate || toDate) && (
+              <button
+                onClick={() => {
+                  setFromDate("");
+                  setToDate("");
+                }}
+                className="text-[12.5px] font-medium"
+                style={{ color: accent }}
+              >
+                Temizle
+              </button>
+            )}
+          </div>
+        </div>
         <Card padded={false}>
-          {payments.map((p, i) => (
-            <div
-              key={p.id}
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderTop: i === 0 ? "none" : `1px solid ${line}` }}
-            >
-              <div className="flex items-center gap-3">
-                <CreditCard size={16} style={{ color: inkSoft }} />
-                <div>
-                  <p className="text-[14px] font-medium" style={{ color: ink }}>
-                    {p.studentName}
-                  </p>
-                  <p className="text-[12.5px]" style={{ color: inkSoft }}>
-                    {formatTRDate(p.date)} · Sonraki: {formatTRDate(p.nextDate)}
-                    {p.note ? ` · ${p.note}` : ""}
-                  </p>
+          {filteredPayments.length === 0 ? (
+            <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+              Seçilen tarih aralığında ödeme kaydı yok.
+            </p>
+          ) : (
+            filteredPayments.map((p, i) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between px-6 py-4"
+                style={{ borderTop: i === 0 ? "none" : `1px solid ${line}` }}
+              >
+                <div className="flex items-center gap-3">
+                  <CreditCard size={16} style={{ color: inkSoft }} />
+                  <div>
+                    <p className="text-[14px] font-medium" style={{ color: ink }}>
+                      {p.studentName}
+                    </p>
+                    <p className="text-[12.5px]" style={{ color: inkSoft }}>
+                      {formatTRDate(p.date)} · Sonraki: {formatTRDate(p.nextDate)}
+                      {p.note ? ` · ${p.note}` : ""}
+                    </p>
+                  </div>
                 </div>
+                <span className="text-[14px] font-semibold" style={{ color: ink }}>
+                  ₺{p.amount.toLocaleString("tr-TR")}
+                </span>
               </div>
-              <span className="text-[14px] font-semibold" style={{ color: ink }}>
-                ₺{p.amount.toLocaleString("tr-TR")}
-              </span>
-            </div>
-          ))}
+            ))
+          )}
         </Card>
       </div>
     </div>
@@ -2165,6 +2419,24 @@ function SettingsPage({ showToast }) {
   const [permission, setPermission] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "unsupported"
   );
+  const [integrations, setIntegrations] = useState({
+    "Google Calendar bağlantısı": "disconnected",
+    "Google Docs bağlantısı": "disconnected",
+  });
+
+  const toggleIntegration = (label) => {
+    const current = integrations[label];
+    if (current === "connected") {
+      setIntegrations((prev) => ({ ...prev, [label]: "disconnected" }));
+      showToast("Bağlantı kesildi", `${label} artık bağlı değil.`);
+      return;
+    }
+    setIntegrations((prev) => ({ ...prev, [label]: "connecting" }));
+    setTimeout(() => {
+      setIntegrations((prev) => ({ ...prev, [label]: "connected" }));
+      showToast("Bağlantı kuruldu", `${label} başarıyla bağlandı.`);
+    }, 1200);
+  };
 
   const requestPermission = async () => {
     if (typeof Notification === "undefined") {
@@ -2257,25 +2529,48 @@ function SettingsPage({ showToast }) {
       </Card>
 
       <div className="flex flex-col gap-4">
-        {[
-          { label: "Google Calendar bağlantısı", status: "Bağlı" },
-          { label: "Google Docs bağlantısı", status: "Bağlı" },
-        ].map((row) => (
-          <Card key={row.label} className="flex items-center justify-between !py-4">
-            <p className="text-[14px] font-medium" style={{ color: ink }}>
-              {row.label}
-            </p>
-            <span
-              className="rounded-full px-2.5 py-1 text-[12.5px] font-medium"
-              style={{
-                background: row.status === "Bağlı" ? greenSoft : "#F4E7E5",
-                color: row.status === "Bağlı" ? green : "#B3453A",
-              }}
-            >
-              {row.status}
-            </span>
-          </Card>
-        ))}
+        {["Google Calendar bağlantısı", "Google Docs bağlantısı"].map((label) => {
+          const status = integrations[label];
+          return (
+            <Card key={label} className="flex items-center justify-between !py-4">
+              <p className="text-[14px] font-medium" style={{ color: ink }}>
+                {label}
+              </p>
+              {status === "connected" ? (
+                <div className="flex items-center gap-3">
+                  <span
+                    className="rounded-full px-2.5 py-1 text-[12.5px] font-medium"
+                    style={{ background: greenSoft, color: green }}
+                  >
+                    Bağlı
+                  </span>
+                  <button
+                    onClick={() => toggleIntegration(label)}
+                    className="text-[12.5px] font-medium"
+                    style={{ color: inkSoft }}
+                  >
+                    Bağlantıyı kes
+                  </button>
+                </div>
+              ) : status === "connecting" ? (
+                <span
+                  className="rounded-full px-2.5 py-1 text-[12.5px] font-medium"
+                  style={{ background: goldSoft, color: gold }}
+                >
+                  Bağlanıyor...
+                </span>
+              ) : (
+                <button
+                  onClick={() => toggleIntegration(label)}
+                  className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-white"
+                  style={{ background: accent }}
+                >
+                  Bağlan
+                </button>
+              )}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
@@ -2329,6 +2624,7 @@ function NotificationToast({ toast, onClose }) {
    Root app
 --------------------------------------------------------- */
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [page, setPage] = useState("dashboard");
   const [students, setStudents] = useState(STUDENTS);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -2347,28 +2643,49 @@ export default function App() {
     setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
   };
 
+  const deleteStudent = (id) => {
+    setStudents((prev) => prev.filter((s) => s.id !== id));
+    setSelectedStudentId(null);
+    setPage("students");
+  };
+
   const setActive = (id) => {
     setSelectedStudentId(null);
     setPage(id);
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setPage("dashboard");
+    setSelectedStudentId(null);
+  };
+
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   const activeNavId = page === "student-detail" ? "students" : page;
 
   let content;
-  if (page === "dashboard") content = <Dashboard openStudent={openStudent} showToast={showToast} />;
+  if (page === "dashboard") content = <Dashboard students={students} openStudent={openStudent} showToast={showToast} />;
   else if (page === "students")
     content = <StudentsPage students={students} setStudents={setStudents} openStudent={openStudent} />;
   else if (page === "student-detail")
     content = (
-      <StudentDetail student={selectedStudent} onUpdateStudent={updateStudent} back={() => setPage("students")} />
+      <StudentDetail
+        student={selectedStudent}
+        onUpdateStudent={updateStudent}
+        onDeleteStudent={deleteStudent}
+        back={() => setPage("students")}
+      />
     );
-  else if (page === "calendar") content = <CalendarPage />;
-  else if (page === "payments") content = <PaymentsPage showToast={showToast} />;
+  else if (page === "calendar") content = <CalendarPage students={students} />;
+  else if (page === "payments") content = <PaymentsPage students={students} showToast={showToast} />;
   else if (page === "settings") content = <SettingsPage showToast={showToast} />;
 
   return (
     <div className="flex h-screen w-full font-sans" style={{ background: canvas }}>
-      <Sidebar active={activeNavId} setActive={setActive} />
+      <Sidebar active={activeNavId} setActive={setActive} onLogout={handleLogout} />
       <main className="flex-1 overflow-y-auto">{content}</main>
       <NotificationToast toast={toast} onClose={() => setToast(null)} />
     </div>
