@@ -1795,7 +1795,7 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
   const firstName = student.name.split(" ")[0];
   const honorific = student.gender === "Kadın" ? "Hanım" : student.gender === "Erkek" ? "Bey" : "";
   const greetingName = honorific ? `${firstName} ${honorific}` : firstName;
-  const calendarLink = "https://calendar.google.com/appointments/sifirdanzirveye-demo";
+  const calendarLink = "https://calendar.app.google/EUeXReTdmqxNUxrJ9";
   const appointmentMessage = `Merhaba ${greetingName}, online görüşmemiz için uygun saatinizi şu linkten seçebilirsiniz: ${calendarLink}`;
   const whatsappPhone = student.phone.replace(/[^\d]/g, "");
   const appointmentWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(appointmentMessage)}`;
