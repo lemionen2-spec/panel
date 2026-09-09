@@ -56,9 +56,22 @@ export default async function handler(req, res) {
     }
   }
 
-  const timeMin = new Date().toISOString();
-  const rangeDays = range === "week" ? 7 : 90;
-  const timeMax = new Date(Date.now() + rangeDays * 24 * 60 * 60 * 1000).toISOString();
+  let timeMin, timeMax;
+  if (range === "week") {
+    const now = new Date();
+    const day = now.getDay(); // 0=Paz, 1=Pzt, ... 6=Cmt
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+    const sundayEnd = new Date(monday);
+    sundayEnd.setDate(monday.getDate() + 7);
+    timeMin = monday.toISOString();
+    timeMax = sundayEnd.toISOString();
+  } else {
+    timeMin = new Date().toISOString();
+    timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  }
 
   const params = new URLSearchParams({
     timeMin,
