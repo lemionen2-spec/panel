@@ -97,7 +97,7 @@ function Badge({ month }) {
   const isVeteran = month >= 2;
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-medium"
+      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[13px] font-medium"
       style={{
         background: isVeteran ? goldSoft : accentSoft,
         color: isVeteran ? gold : accent,
@@ -1814,11 +1814,11 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
         Öğrencilerime dön
       </button>
 
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <Avatar initials={student.avatar} size={56} />
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-[22px] font-semibold" style={{ color: ink }}>
                 {student.name}
               </h1>
