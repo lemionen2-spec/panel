@@ -1478,7 +1478,7 @@ function MeetingNotesHistory() {
 
   return (
     <Card padded={false}>
-      <div className="flex items-center justify-between px-6 pt-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-6 pt-6">
         <div>
           <p className="text-[15px] font-semibold" style={{ color: ink }}>
             Görüşme notları
@@ -1487,9 +1487,11 @@ function MeetingNotesHistory() {
             {sessions.length} haftalık görüşme kaydı · geçmişe dönük görüntüle
           </p>
         </div>
-        <GhostButton icon={Plus} onClick={addSession}>
-          Yeni görüşme ekle
-        </GhostButton>
+        <div className="shrink-0">
+          <GhostButton icon={Plus} onClick={addSession}>
+            <span className="whitespace-nowrap">Yeni görüşme ekle</span>
+          </GhostButton>
+        </div>
       </div>
 
       <div className="mt-5 px-6">
