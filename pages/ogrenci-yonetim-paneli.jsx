@@ -2350,7 +2350,7 @@ function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTask
    Ödeme tarihi yardımcıları — havale/EFT sonrası 30 gün üzerinden
    bir sonraki yenileme tarihi hesaplanır
 --------------------------------------------------------- */
-const TODAY_ISO = "2026-09-03";
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
 const MONTHS_TR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
 function addDaysISO(dateStr, days) {
