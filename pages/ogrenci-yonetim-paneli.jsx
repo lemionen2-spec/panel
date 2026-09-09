@@ -426,6 +426,27 @@ const DEFAULT_TASKS = {
   ],
 };
 
+const SCHEDULED_TASKS_SEED = [
+  {
+    id: 900,
+    title: "Bugün son gün — içerik paketini WhatsApp'tan gönder",
+    minutes: 20,
+    done: false,
+    studentId: 6,
+    studentName: "Onur Şahin",
+    dueDate: "2026-09-03",
+  },
+  {
+    id: 901,
+    title: "İçerik metinlerini hazırla ve gönder",
+    minutes: 45,
+    done: false,
+    studentId: 3,
+    studentName: "Zeynep Arslan",
+    dueDate: "2026-09-05",
+  },
+];
+
 const PLANNER_PERIODS = [
   { id: "day", label: "Gün" },
   { id: "week", label: "Hafta" },
@@ -463,33 +484,12 @@ function findTimeConflicts(tasks) {
   return conflicts;
 }
 
-function WorkPlanner({ students }) {
+function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks }) {
   const [period, setPeriod] = useState("day");
-  const [tasksByPeriod, setTasksByPeriod] = useState(DEFAULT_TASKS);
   const [title, setTitle] = useState("");
   const [minutes, setMinutes] = useState("");
   const [taskTime, setTaskTime] = useState("");
 
-  const [scheduledTasks, setScheduledTasks] = useState([
-    {
-      id: 900,
-      title: "Bugün son gün — içerik paketini WhatsApp'tan gönder",
-      minutes: 20,
-      done: false,
-      studentId: 6,
-      studentName: "Onur Şahin",
-      dueDate: TODAY_ISO,
-    },
-    {
-      id: 901,
-      title: "İçerik metinlerini hazırla ve gönder",
-      minutes: 45,
-      done: false,
-      studentId: 3,
-      studentName: "Zeynep Arslan",
-      dueDate: "2026-09-05",
-    },
-  ]);
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [schedStudentId, setSchedStudentId] = useState(String(students[0]?.id || ""));
   const [schedTitle, setSchedTitle] = useState("");
@@ -918,7 +918,7 @@ function QuickMessageTemplates({ showToast }) {
   );
 }
 
-function Dashboard({ students, payments, openStudent, showToast }) {
+function Dashboard({ students, payments, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks, openStudent, showToast }) {
   const [todayEvents, setTodayEvents] = useState([]);
   const [calConnected, setCalConnected] = useState(null);
   const [calLoading, setCalLoading] = useState(true);
@@ -996,7 +996,7 @@ function Dashboard({ students, payments, openStudent, showToast }) {
       </div>
 
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <WorkPlanner students={students} />
+        <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} />
         <QuickMessageTemplates showToast={showToast} />
       </div>
 
@@ -1848,7 +1848,7 @@ function DocLinkEditor({ student, onUpdateStudent, onDone }) {
   );
 }
 
-function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
+function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, back }) {
   const [fileName, setFileName] = useState(null);
   const [fileLink, setFileLink] = useState("");
   const [loomLink, setLoomLink] = useState("");
@@ -2099,7 +2099,7 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
               <Badge month={student.monthNumber} />
             </div>
             {(() => {
-              const last = PAYMENTS_SEED.filter((p) => p.studentId === student.id).sort((a, b) =>
+              const last = payments.filter((p) => p.studentId === student.id).sort((a, b) =>
                 a.date < b.date ? 1 : -1
               )[0];
               if (!last) {
@@ -2170,7 +2170,7 @@ function getCalendarWeek() {
   return days;
 }
 
-function CalendarPage({ students }) {
+function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks }) {
   const [showPlanner, setShowPlanner] = useState(false);
   const [range, setRange] = useState("week"); // "week" | "all"
   const [events, setEvents] = useState([]);
@@ -2339,7 +2339,7 @@ function CalendarPage({ students }) {
 
       {showPlanner && (
         <div className="mt-6">
-          <WorkPlanner students={students} />
+          <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} />
         </div>
       )}
     </div>
@@ -3038,6 +3038,8 @@ export default function App() {
   const [page, setPage] = useState("dashboard");
   const [students, setStudents] = useState(STUDENTS);
   const [payments, setPayments] = useState(PAYMENTS_SEED);
+  const [tasksByPeriod, setTasksByPeriod] = useState(DEFAULT_TASKS);
+  const [scheduledTasks, setScheduledTasks] = useState(SCHEDULED_TASKS_SEED);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -3097,19 +3099,40 @@ export default function App() {
 
   let content;
   if (page === "dashboard")
-    content = <Dashboard students={students} payments={payments} openStudent={openStudent} showToast={showToast} />;
+    content = (
+      <Dashboard
+        students={students}
+        payments={payments}
+        tasksByPeriod={tasksByPeriod}
+        setTasksByPeriod={setTasksByPeriod}
+        scheduledTasks={scheduledTasks}
+        setScheduledTasks={setScheduledTasks}
+        openStudent={openStudent}
+        showToast={showToast}
+      />
+    );
   else if (page === "students")
     content = <StudentsPage students={students} setStudents={setStudents} openStudent={openStudent} />;
   else if (page === "student-detail")
     content = (
       <StudentDetail
         student={selectedStudent}
+        payments={payments}
         onUpdateStudent={updateStudent}
         onDeleteStudent={deleteStudent}
         back={() => setPage("students")}
       />
     );
-  else if (page === "calendar") content = <CalendarPage students={students} />;
+  else if (page === "calendar")
+    content = (
+      <CalendarPage
+        students={students}
+        tasksByPeriod={tasksByPeriod}
+        setTasksByPeriod={setTasksByPeriod}
+        scheduledTasks={scheduledTasks}
+        setScheduledTasks={setScheduledTasks}
+      />
+    );
   else if (page === "payments")
     content = <PaymentsPage students={students} payments={payments} setPayments={setPayments} showToast={showToast} />;
   else if (page === "finans") content = <FinansPage payments={payments} />;
