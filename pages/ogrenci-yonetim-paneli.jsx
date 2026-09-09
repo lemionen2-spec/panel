@@ -2421,23 +2421,41 @@ function SettingsPage({ showToast }) {
   const [permission, setPermission] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "unsupported"
   );
-  const [integrations, setIntegrations] = useState({
-    "Google Calendar bağlantısı": "disconnected",
-    "Google Docs bağlantısı": "disconnected",
-  });
+  const [googleStatus, setGoogleStatus] = useState("checking"); // checking | connected | disconnected | connecting
 
-  const toggleIntegration = (label) => {
-    const current = integrations[label];
-    if (current === "connected") {
-      setIntegrations((prev) => ({ ...prev, [label]: "disconnected" }));
-      showToast("Bağlantı kesildi", `${label} artık bağlı değil.`);
-      return;
+  useEffect(() => {
+    // Google'dan geri dönüşte URL'deki ?google= parametresini kontrol et
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("google");
+    if (result === "connected") {
+      showToast("Bağlantı kuruldu", "Google Calendar ve Docs başarıyla bağlandı.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (result === "error") {
+      showToast("Bağlantı başarısız", "Google bağlantısı kurulamadı, tekrar dener misin?");
+      window.history.replaceState({}, "", window.location.pathname);
     }
-    setIntegrations((prev) => ({ ...prev, [label]: "connecting" }));
-    setTimeout(() => {
-      setIntegrations((prev) => ({ ...prev, [label]: "connected" }));
-      showToast("Bağlantı kuruldu", `${label} başarıyla bağlandı.`);
-    }, 1200);
+
+    fetch("/api/auth/google/status")
+      .then((r) => r.json())
+      .then((d) => setGoogleStatus(d.connected ? "connected" : "disconnected"))
+      .catch(() => setGoogleStatus("disconnected"));
+  }, []);
+
+  const connectGoogle = () => {
+    setGoogleStatus("connecting");
+    window.location.href = "/api/auth/google";
+  };
+
+  const disconnectGoogle = async () => {
+    setGoogleStatus("connecting");
+    try {
+      await fetch("/api/auth/google/disconnect", { method: "POST" });
+      setGoogleStatus("disconnected");
+      showToast("Bağlantı kesildi", "Google Calendar ve Docs bağlantısı kaldırıldı.");
+    } catch (e) {
+      setGoogleStatus("connected");
+      showToast("Hata", "Bağlantı kesilirken bir sorun oluştu.");
+    }
   };
 
   const requestPermission = async () => {
@@ -2532,7 +2550,7 @@ function SettingsPage({ showToast }) {
 
       <div className="flex flex-col gap-4">
         {["Google Calendar bağlantısı", "Google Docs bağlantısı"].map((label) => {
-          const status = integrations[label];
+          const status = googleStatus;
           return (
             <Card key={label} className="flex items-center justify-between !py-4">
               <p className="text-[14px] font-medium" style={{ color: ink }}>
@@ -2547,23 +2565,23 @@ function SettingsPage({ showToast }) {
                     Bağlı
                   </span>
                   <button
-                    onClick={() => toggleIntegration(label)}
+                    onClick={disconnectGoogle}
                     className="text-[12.5px] font-medium"
                     style={{ color: inkSoft }}
                   >
                     Bağlantıyı kes
                   </button>
                 </div>
-              ) : status === "connecting" ? (
+              ) : status === "connecting" || status === "checking" ? (
                 <span
                   className="rounded-full px-2.5 py-1 text-[12.5px] font-medium"
                   style={{ background: goldSoft, color: gold }}
                 >
-                  Bağlanıyor...
+                  {status === "checking" ? "Kontrol ediliyor..." : "Bağlanıyor..."}
                 </span>
               ) : (
                 <button
-                  onClick={() => toggleIntegration(label)}
+                  onClick={connectGoogle}
                   className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-white"
                   style={{ background: accent }}
                 >
