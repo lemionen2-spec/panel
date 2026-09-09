@@ -36,6 +36,7 @@ import {
   LogOut,
   Trash2,
   ListChecks,
+  Menu as MenuIcon,
 } from "lucide-react";
 
 /* ---------------------------------------------------------
@@ -729,7 +730,7 @@ function WorkPlanner({ students }) {
 
         {showScheduleForm && (
           <div className="mb-3 flex flex-col gap-2 rounded-xl p-3" style={{ background: canvas }}>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <select
                 value={schedStudentId}
                 onChange={(e) => setSchedStudentId(e.target.value)}
@@ -934,7 +935,7 @@ function Dashboard({ students, openStudent, showToast }) {
   ];
 
   return (
-    <div className="mx-auto max-w-[1040px] px-10 py-10">
+    <div className="mx-auto max-w-[1040px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
       <div className="mb-8">
         <h1 className="font-serif text-[30px] font-semibold" style={{ color: ink }}>
           Merhaba, Lemi
@@ -944,7 +945,7 @@ function Dashboard({ students, openStudent, showToast }) {
         </p>
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
         {stats.map((s) => (
           <Card key={s.label} className="relative overflow-hidden">
             <p className="text-[13px]" style={{ color: inkSoft }}>
@@ -964,7 +965,7 @@ function Dashboard({ students, openStudent, showToast }) {
         ))}
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4">
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <WorkPlanner students={students} />
         <QuickMessageTemplates showToast={showToast} />
       </div>
@@ -1190,7 +1191,7 @@ function AddStudentModal({ onClose, onAdd }) {
               style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
                 Telefon
@@ -1279,7 +1280,7 @@ function StudentsPage({ students, setStudents, openStudent }) {
   };
 
   return (
-    <div className="mx-auto max-w-[1040px] px-10 py-10">
+    <div className="mx-auto max-w-[1040px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-serif text-[28px] font-semibold" style={{ color: ink }}>
@@ -1294,7 +1295,7 @@ function StudentsPage({ students, setStudents, openStudent }) {
         </PrimaryButton>
       </div>
 
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex flex-wrap items-center gap-3">
         <div
           className="flex flex-1 items-center gap-2 rounded-xl px-3.5 py-2.5"
           style={{ border: `1px solid ${line}`, background: "#fff" }}
@@ -1326,7 +1327,7 @@ function StudentsPage({ students, setStudents, openStudent }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {filtered.map((s) => (
           <button
             key={s.id}
@@ -1797,7 +1798,7 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
   const deliveryWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(deliveryMessage)}`;
 
   return (
-    <div className="mx-auto max-w-[900px] px-10 py-10">
+    <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
       <button
         onClick={back}
         className="mb-6 inline-flex items-center gap-1.5 text-[14px] font-medium"
@@ -1876,7 +1877,7 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
         />
       )}
 
-      <div className="grid grid-cols-[1.3fr_1fr] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-5">
         <div className="flex flex-col gap-5">
           <MeetingNotesHistory />
 
@@ -2058,7 +2059,7 @@ function CalendarPage({ students }) {
   const days = ["Pzt", "Sal", "Çar", "Per", "Cum"];
   const [showPlanner, setShowPlanner] = useState(false);
   return (
-    <div className="mx-auto max-w-[1040px] px-10 py-10">
+    <div className="mx-auto max-w-[1040px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-serif text-[28px] font-semibold" style={{ color: ink }}>
@@ -2073,37 +2074,41 @@ function CalendarPage({ students }) {
         </PrimaryButton>
       </div>
       <Card padded={false}>
-        <div className="grid grid-cols-5" style={{ borderBottom: `1px solid ${line}` }}>
-          {days.map((d) => (
-            <div key={d} className="px-5 py-3 text-[13px] font-medium" style={{ color: inkSoft }}>
-              {d}
+        <div className="overflow-x-auto">
+          <div className="min-w-[640px]">
+            <div className="grid grid-cols-5" style={{ borderBottom: `1px solid ${line}` }}>
+              {days.map((d) => (
+                <div key={d} className="px-5 py-3 text-[13px] font-medium" style={{ color: inkSoft }}>
+                  {d}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-5">
-          {days.map((d, i) => (
-            <div
-              key={d}
-              className="min-h-[220px] px-3 py-3"
-              style={{ borderRight: i < 4 ? `1px solid ${line}` : "none" }}
-            >
-              {i === 1 && (
-                <div className="mb-2 rounded-lg px-2.5 py-2 text-[12.5px]" style={{ background: accentSoft, color: accent }}>
-                  14:00 Elif Yıldırım
+            <div className="grid grid-cols-5">
+              {days.map((d, i) => (
+                <div
+                  key={d}
+                  className="min-h-[220px] px-3 py-3"
+                  style={{ borderRight: i < 4 ? `1px solid ${line}` : "none" }}
+                >
+                  {i === 1 && (
+                    <div className="mb-2 rounded-lg px-2.5 py-2 text-[12.5px]" style={{ background: accentSoft, color: accent }}>
+                      14:00 Elif Yıldırım
+                    </div>
+                  )}
+                  {i === 1 && (
+                    <div className="rounded-lg px-2.5 py-2 text-[12.5px]" style={{ background: accentSoft, color: accent }}>
+                      16:30 Mert Kaya
+                    </div>
+                  )}
+                  {i === 2 && (
+                    <div className="rounded-lg px-2.5 py-2 text-[12.5px]" style={{ background: accentSoft, color: accent }}>
+                      10:00 Zeynep Arslan
+                    </div>
+                  )}
                 </div>
-              )}
-              {i === 1 && (
-                <div className="rounded-lg px-2.5 py-2 text-[12.5px]" style={{ background: accentSoft, color: accent }}>
-                  16:30 Mert Kaya
-                </div>
-              )}
-              {i === 2 && (
-                <div className="rounded-lg px-2.5 py-2 text-[12.5px]" style={{ background: accentSoft, color: accent }}>
-                  10:00 Zeynep Arslan
-                </div>
-              )}
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </Card>
 
@@ -2203,7 +2208,7 @@ function PaymentsPage({ students, showToast }) {
   };
 
   return (
-    <div className="mx-auto max-w-[1040px] px-10 py-10">
+    <div className="mx-auto max-w-[1040px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
       <div className="mb-8">
         <h1 className="font-serif text-[28px] font-semibold" style={{ color: ink }}>
           Ödemeler
@@ -2218,7 +2223,7 @@ function PaymentsPage({ students, showToast }) {
         <p className="mb-4 text-[14.5px] font-semibold" style={{ color: ink }}>
           Yeni ödeme kaydı
         </p>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
               Öğrenci
@@ -2485,7 +2490,7 @@ function SettingsPage({ showToast }) {
   }[permission];
 
   return (
-    <div className="mx-auto max-w-[1040px] px-10 py-10">
+    <div className="mx-auto max-w-[1040px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
       <div className="mb-8">
         <h1 className="font-serif text-[28px] font-semibold" style={{ color: ink }}>
           Ayarlar
@@ -2603,7 +2608,7 @@ function NotificationToast({ toast, onClose }) {
 
   return (
     <div
-      className="fixed right-5 top-5 z-50 w-[340px] rounded-2xl bg-white p-4"
+      className="fixed right-4 left-4 top-4 z-50 w-auto sm:left-auto sm:w-[340px] rounded-2xl bg-white p-4"
       style={{ border: `1px solid ${line}`, boxShadow: cardShadow }}
     >
       <div className="flex items-start gap-3">
@@ -2637,6 +2642,7 @@ function NotificationToast({ toast, onClose }) {
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [page, setPage] = useState("dashboard");
   const [students, setStudents] = useState(STUDENTS);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -2714,8 +2720,45 @@ export default function App() {
   else if (page === "settings") content = <SettingsPage showToast={showToast} />;
 
   return (
-    <div className="flex h-screen w-full font-sans" style={{ background: canvas }}>
-      <Sidebar active={activeNavId} setActive={setActive} onLogout={handleLogout} />
+    <div className="flex h-screen w-full flex-col font-sans md:flex-row" style={{ background: canvas }}>
+      {/* Mobil üst bar */}
+      <div
+        className="flex items-center justify-between px-4 py-3 md:hidden"
+        style={{ background: "#fff", borderBottom: `1px solid ${line}` }}
+      >
+        <img src={LOGO_DATA_URI} alt="Lemi Önen" className="h-7 w-auto" />
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg"
+          style={{ color: ink }}
+        >
+          <MenuIcon size={22} />
+        </button>
+      </div>
+
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 md:hidden"
+          style={{ background: "rgba(31,27,29,0.4)" }}
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      <div
+        className={`fixed inset-y-0 left-0 z-50 md:relative md:z-auto ${
+          mobileMenuOpen ? "flex" : "hidden"
+        } md:flex`}
+      >
+        <Sidebar
+          active={activeNavId}
+          setActive={(id) => {
+            setActive(id);
+            setMobileMenuOpen(false);
+          }}
+          onLogout={handleLogout}
+        />
+      </div>
+
       <main className="flex-1 overflow-y-auto">{content}</main>
       <NotificationToast toast={toast} onClose={() => setToast(null)} />
     </div>
