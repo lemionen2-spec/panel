@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
 import {
   LayoutDashboard,
   Users,
@@ -204,7 +205,10 @@ function GhostButton({ children, icon: Icon, onClick, full = false }) {
 /* ---------------------------------------------------------
    Yönetici / Koç giriş ekranı
 --------------------------------------------------------- */
-const DEMO_CREDENTIALS = { email: "lemi@lemionen.com", password: "lemi2026" };
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -214,28 +218,24 @@ function LoginScreen({ onLogin }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fillDemo = () => {
-    setEmail(DEMO_CREDENTIALS.email);
-    setPassword(DEMO_CREDENTIALS.password);
-    setError("");
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
       setError("E-posta ve şifre alanları zorunludur.");
       return;
     }
-    if (email.trim().toLowerCase() !== DEMO_CREDENTIALS.email || password !== DEMO_CREDENTIALS.password) {
+    setError("");
+    setLoading(true);
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    setLoading(false);
+    if (authError) {
       setError("E-posta veya şifre hatalı.");
       return;
     }
-    setError("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      onLogin(email);
-    }, 700);
+    onLogin(email);
   };
 
   return (
@@ -325,15 +325,6 @@ function LoginScreen({ onLogin }) {
             <PrimaryButton type="submit" full disabled={loading} onClick={handleSubmit}>
               {loading ? "Giriş yapılıyor..." : "Giriş yap"}
             </PrimaryButton>
-
-            <button
-              type="button"
-              onClick={fillDemo}
-              className="text-center text-[12.5px] font-medium"
-              style={{ color: inkSoft }}
-            >
-              Demo giriş bilgileriyle doldur
-            </button>
           </form>
         </div>
 
@@ -2645,10 +2636,18 @@ function NotificationToast({ toast, onClose }) {
 --------------------------------------------------------- */
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [page, setPage] = useState("dashboard");
   const [students, setStudents] = useState(STUDENTS);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setIsAuthenticated(!!data.session);
+      setCheckingSession(false);
+    });
+  }, []);
 
   const showToast = (title, body) => setToast({ title, body });
 
@@ -2674,11 +2673,22 @@ export default function App() {
     setPage(id);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setIsAuthenticated(false);
     setPage("dashboard");
     setSelectedStudentId(null);
   };
+
+  if (checkingSession) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center font-sans" style={{ background: canvas }}>
+        <p className="text-[14px]" style={{ color: inkSoft }}>
+          Yükleniyor...
+        </p>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
