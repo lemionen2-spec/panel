@@ -2063,11 +2063,18 @@ function formatEventDateTime(iso, allDay) {
   return `${dateStr} · ${timeStr}`;
 }
 
-function getNext7Days() {
+function getCalendarWeek() {
+  const now = new Date();
+  const day = now.getDay(); // 0=Paz, 1=Pzt, ... 6=Cmt
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
   const days = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
     days.push(d);
   }
   return days;
@@ -2098,7 +2105,7 @@ function CalendarPage({ students }) {
       .finally(() => setLoading(false));
   }, [range]);
 
-  const weekDays = getNext7Days();
+  const weekDays = getCalendarWeek();
   const eventsByDay = weekDays.map((day) =>
     events.filter((ev) => new Date(ev.start).toDateString() === day.toDateString())
   );
