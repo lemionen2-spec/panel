@@ -2055,9 +2055,39 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
 /* ---------------------------------------------------------
    Lightweight placeholder pages (Calendar / Payments / Settings)
 --------------------------------------------------------- */
+function formatEventDateTime(iso, allDay) {
+  const d = new Date(iso);
+  const dateStr = d.toLocaleDateString("tr-TR", { day: "numeric", month: "long", weekday: "short" });
+  if (allDay) return dateStr;
+  const timeStr = d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  return `${dateStr} · ${timeStr}`;
+}
+
 function CalendarPage({ students }) {
-  const days = ["Pzt", "Sal", "Çar", "Per", "Cum"];
   const [showPlanner, setShowPlanner] = useState(false);
+  const [range, setRange] = useState("week"); // "week" | "all"
+  const [events, setEvents] = useState([]);
+  const [connected, setConnected] = useState(null); // null = henüz bilinmiyor
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setFetchError(false);
+    fetch(`/api/calendar/events?range=${range}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setConnected(d.connected);
+        setEvents(d.events || []);
+        setFetchError(!!d.error);
+      })
+      .catch(() => {
+        setConnected(false);
+        setFetchError(true);
+      })
+      .finally(() => setLoading(false));
+  }, [range]);
+
   return (
     <div className="mx-auto max-w-[1040px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
@@ -2066,49 +2096,84 @@ function CalendarPage({ students }) {
             Takvim & Randevular
           </h1>
           <p className="mt-1 text-[14px]" style={{ color: inkSoft }}>
-            Hatırlatmalar açık — bu hafta 8 görüşme planlı.
+            Google Calendar'ından canlı çekiliyor
           </p>
         </div>
         <PrimaryButton icon={ListChecks} onClick={() => setShowPlanner((v) => !v)}>
           {showPlanner ? "İş planlayıcıyı gizle" : "İş planlayıcıyı göster"}
         </PrimaryButton>
       </div>
+
       <Card padded={false}>
-        <div className="overflow-x-auto">
-          <div className="min-w-[640px]">
-            <div className="grid grid-cols-5" style={{ borderBottom: `1px solid ${line}` }}>
-              {days.map((d) => (
-                <div key={d} className="px-5 py-3 text-[13px] font-medium" style={{ color: inkSoft }}>
-                  {d}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-5">
-              {days.map((d, i) => (
-                <div
-                  key={d}
-                  className="min-h-[220px] px-3 py-3"
-                  style={{ borderRight: i < 4 ? `1px solid ${line}` : "none" }}
-                >
-                  {i === 1 && (
-                    <div className="mb-2 rounded-lg px-2.5 py-2 text-[12.5px]" style={{ background: accentSoft, color: accent }}>
-                      14:00 Elif Yıldırım
-                    </div>
-                  )}
-                  {i === 1 && (
-                    <div className="rounded-lg px-2.5 py-2 text-[12.5px]" style={{ background: accentSoft, color: accent }}>
-                      16:30 Mert Kaya
-                    </div>
-                  )}
-                  {i === 2 && (
-                    <div className="rounded-lg px-2.5 py-2 text-[12.5px]" style={{ background: accentSoft, color: accent }}>
-                      10:00 Zeynep Arslan
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-6">
+          <p className="text-[15px] font-semibold" style={{ color: ink }}>
+            Yaklaşan randevular
+          </p>
+          <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: canvas }}>
+            {[
+              { id: "week", label: "7 Gün" },
+              { id: "all", label: "Tüm Randevular" },
+            ].map((r) => (
+              <button
+                key={r.id}
+                onClick={() => setRange(r.id)}
+                className="rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-colors"
+                style={{
+                  background: range === r.id ? "#fff" : "transparent",
+                  color: range === r.id ? ink : inkSoft,
+                  boxShadow: range === r.id ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                }}
+              >
+                {r.label}
+              </button>
+            ))}
           </div>
+        </div>
+
+        <div className="mt-4">
+          {loading ? (
+            <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+              Yükleniyor...
+            </p>
+          ) : connected === false ? (
+            <div className="px-6 py-8 text-center">
+              <p className="text-[13.5px] font-medium" style={{ color: ink }}>
+                Google Calendar bağlı değil
+              </p>
+              <p className="mt-1 text-[12.5px]" style={{ color: inkSoft }}>
+                Randevularını burada görebilmek için Ayarlar sayfasından Google Calendar'ı bağla.
+              </p>
+            </div>
+          ) : fetchError ? (
+            <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: "#B3453A" }}>
+              Randevular çekilirken bir sorun oluştu, sayfayı yenilemeyi dener misin?
+            </p>
+          ) : events.length === 0 ? (
+            <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+              Bu aralıkta planlı randevu yok.
+            </p>
+          ) : (
+            events.map((ev, i) => (
+              <a
+                key={ev.id}
+                href={ev.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-3 px-6 py-3.5 transition-colors hover:bg-black/[0.02]"
+                style={{ borderTop: i === 0 ? "none" : `1px solid ${line}` }}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-[13.5px] font-medium" style={{ color: ink }}>
+                    {ev.title}
+                  </p>
+                  <p className="text-[12px]" style={{ color: inkSoft }}>
+                    {formatEventDateTime(ev.start, ev.allDay)}
+                  </p>
+                </div>
+                <ExternalLink size={14} className="shrink-0" style={{ color: inkSoft }} />
+              </a>
+            ))
+          )}
         </div>
       </Card>
 
