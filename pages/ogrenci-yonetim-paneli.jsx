@@ -64,25 +64,14 @@ const LOGO_DATA_URI =
    Mock data
 --------------------------------------------------------- */
 const STUDENTS = [
-  { id: 1, name: "Elif Yıldırım", handle: "@elifyildirim", monthNumber: 7, gender: "Kadın", avatar: "EY", phone: "+90 532 111 22 33", email: "elif.yildirim@gmail.com", niche: "Kişisel gelişim içerikleri", nextCall: "Bugün 14:00", notes: "Reels tempo çalışması yapıyoruz, hook'lar geliştirildi. Sonraki hafta hedefi: 3 viral deneme." },
-  { id: 2, name: "Mert Kaya", handle: "@mertkaya.fit", monthNumber: 1, gender: "Erkek", avatar: "MK", phone: "+90 533 222 33 44", email: "mert.kaya@gmail.com", niche: "Fitness koçluğu", nextCall: "Bugün 16:30", notes: "Profil biyografisi ve vurgu renkleri netleşti. Bu hafta ilk 5 gönderi planı hazırlanacak." },
-  { id: 3, name: "Zeynep Arslan", handle: "@zeyneparslan", monthNumber: 20, gender: "Kadın", avatar: "ZA", phone: "+90 534 333 44 55", email: "zeynep.arslan@gmail.com", niche: "Dijital pazarlama", nextCall: "Yarın 10:00", notes: "Gelir hedefine göre teklif sayfası revize edildi." },
-  { id: 4, name: "Burak Demir", handle: "@burakdemir", monthNumber: 1, gender: "Erkek", avatar: "BD", phone: "+90 535 444 55 66", email: "burak.demir@gmail.com", niche: "Emlak danışmanlığı", nextCall: "Perşembe 11:00", notes: "İlk görüşme yapıldı, hedef kitle netleştirme aşamasında." },
-  { id: 5, name: "Selin Öztürk", handle: "@selinozturk", monthNumber: 14, gender: "Kadın", avatar: "SÖ", phone: "+90 536 555 66 77", email: "selin.ozturk@gmail.com", niche: "Moda & stil", nextCall: "Cuma 13:00", notes: "Aylık rapor hazırlandı, onay bekleniyor." },
-  { id: 6, name: "Onur Şahin", handle: "@onursahin", monthNumber: 1, gender: "Erkek", avatar: "OŞ", phone: "+90 537 666 77 88", email: "onur.sahin@gmail.com", niche: "Yazılım kariyeri", nextCall: "Pazartesi 15:00", notes: "İçerik takvimi taslağı paylaşıldı." },
-  { id: 7, name: "Aylin Koç", handle: "@aylinkoc", monthNumber: 9, gender: "Kadın", avatar: "AK", phone: "+90 538 777 88 99", email: "aylin.koc@gmail.com", niche: "Anne & bebek", nextCall: "Salı 09:30", notes: "Reels performansı %40 arttı, strateji sabit tutulacak." },
-  { id: 8, name: "Kerem Yavuz", handle: "@keremyavuz", monthNumber: 1, gender: "Erkek", avatar: "KY", phone: "+90 539 888 99 00", email: "kerem.yavuz@gmail.com", niche: "Kişisel finans", nextCall: "Çarşamba 17:00", notes: "Marka sesi çalışması tamamlandı." },
-];
-
-const PENDING_REPORTS = [
-  { id: 1, student: "Elif Yıldırım", file: "Aylık Performans Raporu.pdf", due: "Bugün, 18:00" },
-  { id: 2, student: "Selin Öztürk", file: "İçerik Takvimi – Ekim.docx", due: "Bugün, 20:00" },
-  { id: 3, student: "Aylin Koç", file: "Büyüme Analizi.pdf", due: "Yarın, 10:00" },
-];
-
-const TODAY_CALLS = [
-  { id: 1, student: "Elif Yıldırım", time: "14:00", duration: "45 dk", type: "Haftalık değerlendirme" },
-  { id: 2, student: "Mert Kaya", time: "16:30", duration: "30 dk", type: "İlk strateji görüşmesi" },
+  { id: 1, name: "Elif Yıldırım", handle: "@elifyildirim", monthNumber: 7, gender: "Kadın", avatar: "EY", phone: "+90 532 111 22 33", email: "elif.yildirim@gmail.com", niche: "Kişisel gelişim içerikleri", nextCall: "Bugün 14:00", nextDeliveryDate: "2026-09-03", notes: "Reels tempo çalışması yapıyoruz, hook'lar geliştirildi. Sonraki hafta hedefi: 3 viral deneme." },
+  { id: 2, name: "Mert Kaya", handle: "@mertkaya.fit", monthNumber: 1, gender: "Erkek", avatar: "MK", phone: "+90 533 222 33 44", email: "mert.kaya@gmail.com", niche: "Fitness koçluğu", nextCall: "Bugün 16:30", nextDeliveryDate: "2026-09-05", notes: "Profil biyografisi ve vurgu renkleri netleşti. Bu hafta ilk 5 gönderi planı hazırlanacak." },
+  { id: 3, name: "Zeynep Arslan", handle: "@zeyneparslan", monthNumber: 20, gender: "Kadın", avatar: "ZA", phone: "+90 534 333 44 55", email: "zeynep.arslan@gmail.com", niche: "Dijital pazarlama", nextCall: "Yarın 10:00", nextDeliveryDate: "2026-09-01", notes: "Gelir hedefine göre teklif sayfası revize edildi." },
+  { id: 4, name: "Burak Demir", handle: "@burakdemir", monthNumber: 1, gender: "Erkek", avatar: "BD", phone: "+90 535 444 55 66", email: "burak.demir@gmail.com", niche: "Emlak danışmanlığı", nextCall: "Perşembe 11:00", nextDeliveryDate: "2026-09-10", notes: "İlk görüşme yapıldı, hedef kitle netleştirme aşamasında." },
+  { id: 5, name: "Selin Öztürk", handle: "@selinozturk", monthNumber: 14, gender: "Kadın", avatar: "SÖ", phone: "+90 536 555 66 77", email: "selin.ozturk@gmail.com", niche: "Moda & stil", nextCall: "Cuma 13:00", nextDeliveryDate: "2026-09-03", notes: "Aylık rapor hazırlandı, onay bekleniyor." },
+  { id: 6, name: "Onur Şahin", handle: "@onursahin", monthNumber: 1, gender: "Erkek", avatar: "OŞ", phone: "+90 537 666 77 88", email: "onur.sahin@gmail.com", niche: "Yazılım kariyeri", nextCall: "Pazartesi 15:00", nextDeliveryDate: "2026-09-08", notes: "İçerik takvimi taslağı paylaşıldı." },
+  { id: 7, name: "Aylin Koç", handle: "@aylinkoc", monthNumber: 9, gender: "Kadın", avatar: "AK", phone: "+90 538 777 88 99", email: "aylin.koc@gmail.com", niche: "Anne & bebek", nextCall: "Salı 09:30", nextDeliveryDate: "2026-09-12", notes: "Reels performansı %40 arttı, strateji sabit tutulacak." },
+  { id: 8, name: "Kerem Yavuz", handle: "@keremyavuz", monthNumber: 1, gender: "Erkek", avatar: "KY", phone: "+90 539 888 99 00", email: "kerem.yavuz@gmail.com", niche: "Kişisel finans", nextCall: "Çarşamba 17:00", nextDeliveryDate: "2026-09-06", notes: "Marka sesi çalışması tamamlandı." },
 ];
 
 const NAV_ITEMS = [
@@ -929,11 +918,50 @@ function QuickMessageTemplates({ showToast }) {
   );
 }
 
-function Dashboard({ students, openStudent, showToast }) {
+function Dashboard({ students, payments, openStudent, showToast }) {
+  const [todayEvents, setTodayEvents] = useState([]);
+  const [calConnected, setCalConnected] = useState(null);
+  const [calLoading, setCalLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/calendar/events?range=week`)
+      .then((r) => r.json())
+      .then((d) => {
+        setCalConnected(d.connected);
+        const todays = (d.events || []).filter(
+          (ev) => new Date(ev.start).toDateString() === new Date().toDateString()
+        );
+        setTodayEvents(todays);
+      })
+      .catch(() => setCalConnected(false))
+      .finally(() => setCalLoading(false));
+  }, []);
+
+  const collectedThisMonth = payments
+    .filter((p) => monthKey(p.date) === monthKey(TODAY_ISO))
+    .reduce((s, p) => s + p.amount, 0);
+
+  const dueReports = students
+    .filter((s) => s.nextDeliveryDate && s.nextDeliveryDate <= TODAY_ISO)
+    .sort((a, b) => (a.nextDeliveryDate < b.nextDeliveryDate ? -1 : 1));
+  const dueToday = dueReports.filter((s) => s.nextDeliveryDate === TODAY_ISO);
+
   const stats = [
-    { label: "Aktif Öğrenci", value: "24", sub: "+3 bu ay", positive: true, arc: accent },
-    { label: "Bu Ay Koçluk Geliri", value: "₺48.600", sub: "+%18 geçen aya göre", positive: true, arc: accent },
-    { label: "Gönderilecek Raporlar", value: "5", sub: "Bugün 3 tanesi", positive: false, arc: green },
+    { label: "Aktif Öğrenci", value: String(students.length), sub: "Toplam kayıtlı öğrenci", positive: true, arc: accent },
+    {
+      label: "Bu Ay Koçluk Geliri",
+      value: `₺${collectedThisMonth.toLocaleString("tr-TR")}`,
+      sub: `${monthLabel(monthKey(TODAY_ISO))}`,
+      positive: true,
+      arc: accent,
+    },
+    {
+      label: "Gönderilecek Raporlar",
+      value: String(dueReports.length),
+      sub: `Bugün ${dueToday.length} tanesi`,
+      positive: false,
+      arc: green,
+    },
   ];
 
   return (
@@ -943,7 +971,7 @@ function Dashboard({ students, openStudent, showToast }) {
           Merhaba, Lemi
         </h1>
         <p className="mt-1.5 text-[14px]" style={{ color: inkSoft }}>
-          2 Eylül Çarşamba — bugün 2 birebir görüşmen ve gönderilecek 3 dosyan var.
+          Bugün {todayEvents.length} birebir görüşmen ve gönderilecek {dueToday.length} dosyan var.
         </p>
       </div>
 
@@ -977,52 +1005,55 @@ function Dashboard({ students, openStudent, showToast }) {
           <div className="flex items-center justify-between px-6 pt-6">
             <div>
               <h2 className="text-[17px] font-semibold" style={{ color: ink }}>
-                Bugün gönderilecek raporlar & dosyalar
+                Gönderilecek raporlar & dosyalar
               </h2>
               <p className="mt-0.5 text-[13px]" style={{ color: inkSoft }}>
-                Hazırlanan dosyaları öğrenciye WhatsApp üzerinden ilet.
+                Teslim tarihi geçmiş veya bugün olan öğrenciler — tıklayınca öğrenci sayfasına gidip
+                dosya linkini ekleyip gönderebilirsin.
               </p>
             </div>
             <span
               className="rounded-full px-2.5 py-1 text-[12.5px] font-medium"
               style={{ background: goldSoft, color: gold }}
             >
-              {PENDING_REPORTS.length} bekliyor
+              {dueReports.length} bekliyor
             </span>
           </div>
 
           <div className="mt-5">
-            {PENDING_REPORTS.map((r, i) => (
-              <div
-                key={r.id}
-                className="flex items-center justify-between px-6 py-4"
-                style={{ borderTop: `1px solid ${line}` }}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-lg"
-                    style={{ background: canvas }}
-                  >
-                    <FileText size={16} style={{ color: inkSoft }} />
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-medium" style={{ color: ink }}>
-                      {r.file}
-                    </p>
-                    <p className="text-[12.5px]" style={{ color: inkSoft }}>
-                      {r.student} · Son gönderim: {r.due}
-                    </p>
-                  </div>
-                </div>
+            {dueReports.length === 0 ? (
+              <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+                Bekleyen bir teslim yok.
+              </p>
+            ) : (
+              dueReports.map((s, i) => (
                 <button
-                  className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium text-white hover:opacity-90"
-                  style={{ background: green }}
+                  key={s.id}
+                  onClick={() => openStudent(s)}
+                  className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-black/[0.02]"
+                  style={{ borderTop: i === 0 ? "none" : `1px solid ${line}` }}
                 >
-                  <MessageCircle size={15} />
-                  WhatsApp'tan gönder
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-9 w-9 items-center justify-center rounded-lg"
+                      style={{ background: canvas }}
+                    >
+                      <FileText size={16} style={{ color: inkSoft }} />
+                    </div>
+                    <div>
+                      <p className="text-[14px] font-medium" style={{ color: ink }}>
+                        {s.name}
+                      </p>
+                      <p className="text-[12.5px]" style={{ color: inkSoft }}>
+                        Teslim: {formatTRDate(s.nextDeliveryDate)}
+                        {s.nextDeliveryDate < TODAY_ISO ? " · gecikti" : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} style={{ color: inkSoft }} />
                 </button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </Card>
       </div>
@@ -1034,62 +1065,73 @@ function Dashboard({ students, openStudent, showToast }) {
               Online görüşme randevuları
             </h2>
             <p className="mt-0.5 text-[13px]" style={{ color: inkSoft }}>
-              Saatinden önce hatırlatma alırsın, görüşmeye Meet üzerinden katılırsın
+              Google Calendar'ından bugünün randevuları
             </p>
           </div>
           <CalendarDays size={18} style={{ color: inkSoft }} />
         </div>
 
         <div className="mt-5">
-          {TODAY_CALLS.map((c) => (
-            <div
-              key={c.id}
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderTop: `1px solid ${line}` }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex w-14 flex-col items-center">
-                  <p className="text-[15px] font-semibold" style={{ color: ink }}>
-                    {c.time}
-                  </p>
-                  <p className="text-[11.5px]" style={{ color: inkSoft }}>
-                    {c.duration}
-                  </p>
-                </div>
-                <div style={{ width: 1, height: 32, background: line }} />
-                <div>
-                  <p className="text-[14px] font-medium" style={{ color: ink }}>
-                    {c.student}
-                  </p>
-                  <p className="text-[12.5px]" style={{ color: inkSoft }}>
-                    {c.type}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  let native = false;
-                  try {
-                    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-                      new Notification("Görüşme hatırlatması", {
-                        body: `${c.student} ile görüşmen ${c.time}'te başlıyor.`,
-                      });
-                      native = true;
-                    }
-                  } catch (e) {
-                    native = false;
-                  }
-                  if (!native)
-                    showToast("Görüşme hatırlatması", `${c.student} ile görüşmen ${c.time}'te başlıyor.`);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-opacity hover:opacity-80"
-                style={{ background: accentSoft, color: accent }}
+          {calLoading ? (
+            <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+              Yükleniyor...
+            </p>
+          ) : calConnected === false ? (
+            <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+              Google Calendar bağlı değil — Ayarlar'dan bağlayabilirsin.
+            </p>
+          ) : todayEvents.length === 0 ? (
+            <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+              Bugün planlı randevu yok.
+            </p>
+          ) : (
+            todayEvents.map((ev) => (
+              <a
+                key={ev.id}
+                href={ev.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-black/[0.02]"
+                style={{ borderTop: `1px solid ${line}` }}
               >
-                <Bell size={12} />
-                Hatırlatma açık
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-3">
+                  <div className="flex w-14 flex-col items-center">
+                    <p className="text-[15px] font-semibold" style={{ color: ink }}>
+                      {ev.allDay
+                        ? "Tüm gün"
+                        : new Date(ev.start).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                  <div style={{ width: 1, height: 32, background: line }} />
+                  <div>
+                    <p className="text-[14px] font-medium" style={{ color: ink }}>
+                      {ev.title}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    let native = false;
+                    try {
+                      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+                        new Notification("Görüşme hatırlatması", { body: `${ev.title} yaklaşıyor.` });
+                        native = true;
+                      }
+                    } catch (err) {
+                      native = false;
+                    }
+                    if (!native) showToast("Görüşme hatırlatması", `${ev.title} yaklaşıyor.`);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-opacity hover:opacity-80"
+                  style={{ background: accentSoft, color: accent }}
+                >
+                  <Bell size={12} />
+                  Hatırlatma açık
+                </button>
+              </a>
+            ))
+          )}
         </div>
       </Card>
     </div>
@@ -1560,11 +1602,19 @@ function MeetingNotesHistory() {
 /* ---------------------------------------------------------
    İçerik teslim tarihi (esnek periyot) — 2 gün kala uyarı
 --------------------------------------------------------- */
-function ContentDeliveryDate() {
+function ContentDeliveryDate({ student, onUpdateStudent }) {
   const [period, setPeriod] = useState("7");
-  const daysLeft = 2; // demo: bugünden itibaren kalan gün
+  const [editing, setEditing] = useState(false);
+  const [dateValue, setDateValue] = useState(student.nextDeliveryDate || "");
 
-  const isWarning = daysLeft <= 2;
+  const daysLeft = student.nextDeliveryDate ? daysUntil(student.nextDeliveryDate) : null;
+  const isOverdue = daysLeft !== null && daysLeft < 0;
+  const isWarning = daysLeft !== null && daysLeft <= 2;
+
+  const save = () => {
+    onUpdateStudent(student.id, { nextDeliveryDate: dateValue });
+    setEditing(false);
+  };
 
   return (
     <Card>
@@ -1575,26 +1625,44 @@ function ContentDeliveryDate() {
         {isWarning && (
           <span
             className="rounded-full px-2.5 py-1 text-[12px] font-medium"
-            style={{ background: goldSoft, color: gold }}
+            style={{ background: isOverdue ? "#F4E7E5" : goldSoft, color: isOverdue ? "#B3453A" : gold }}
           >
-            {daysLeft} gün kaldı
+            {isOverdue ? `${Math.abs(daysLeft)} gün gecikti` : daysLeft === 0 ? "Bugün" : `${daysLeft} gün kaldı`}
           </span>
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: accentSoft }}>
-          <CalendarDays size={18} style={{ color: accent }} />
+      {editing ? (
+        <div className="mt-3 flex flex-col gap-2">
+          <input
+            type="date"
+            value={dateValue}
+            onChange={(e) => setDateValue(e.target.value)}
+            className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+            style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+          />
+          <PrimaryButton full onClick={save}>
+            Kaydet
+          </PrimaryButton>
         </div>
-        <div>
-          <p className="text-[14px] font-medium" style={{ color: ink }}>
-            5 Eylül 2026
-          </p>
-          <p className="text-[12.5px]" style={{ color: inkSoft }}>
-            Bir sonraki içerik paketi teslim tarihi
-          </p>
+      ) : (
+        <div className="mt-3 flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: accentSoft }}>
+            <CalendarDays size={18} style={{ color: accent }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-medium" style={{ color: ink }}>
+              {student.nextDeliveryDate ? formatTRDate(student.nextDeliveryDate) : "Henüz belirlenmedi"}
+            </p>
+            <p className="text-[12.5px]" style={{ color: inkSoft }}>
+              Bir sonraki içerik paketi teslim tarihi
+            </p>
+          </div>
+          <button onClick={() => setEditing(true)} className="text-[12.5px] font-medium shrink-0" style={{ color: accent }}>
+            Değiştir
+          </button>
         </div>
-      </div>
+      )}
 
       <div className="mt-4">
         <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
@@ -1964,7 +2032,7 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
         </div>
 
         <div className="flex flex-col gap-5">
-          <ContentDeliveryDate />
+          <ContentDeliveryDate student={student} onUpdateStudent={onUpdateStudent} />
 
           <Card>
             <SectionTitle>Belgeler</SectionTitle>
@@ -3028,7 +3096,8 @@ export default function App() {
   const activeNavId = page === "student-detail" ? "students" : page;
 
   let content;
-  if (page === "dashboard") content = <Dashboard students={students} openStudent={openStudent} showToast={showToast} />;
+  if (page === "dashboard")
+    content = <Dashboard students={students} payments={payments} openStudent={openStudent} showToast={showToast} />;
   else if (page === "students")
     content = <StudentsPage students={students} setStudents={setStudents} openStudent={openStudent} />;
   else if (page === "student-detail")
