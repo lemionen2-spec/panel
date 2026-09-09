@@ -819,7 +819,7 @@ function WorkPlanner({ students }) {
    Hızlı mesaj şablonları bankası
 --------------------------------------------------------- */
 const MESSAGE_TEMPLATES = [
-  { id: 1, title: "İçerik teslimi", text: "Merhaba {isim}, yeni döneme ait içerik metinleriniz hazırlandı. Panelinizden inceleyebilirsiniz 🎯" },
+  { id: 1, title: "İçerik teslimi", text: "Merhaba {isim}, yeni döneme ait içerik metinlerinize linki tıklayarak ulaşabilirsiniz 🎯" },
   { id: 2, title: "Randevu talebi", text: "Merhaba {isim}, bir sonraki görüşmemiz için uygun saatinizi şu linkten seçebilir misiniz? {takvim_linki}" },
   { id: 3, title: "Ödeme hatırlatma", text: "Merhaba {isim}, aboneliğinizin yenilenme tarihi yaklaşıyor. Bir sorunuz olursa buradayım 🙌" },
   { id: 4, title: "Görüşme özeti", text: "Merhaba {isim}, bugünkü görüşmemizin özetini ve aksiyon maddelerini panelinize ekledim." },
@@ -1782,6 +1782,7 @@ function DocLinkEditor({ student, onUpdateStudent, onDone }) {
 
 function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
   const [fileName, setFileName] = useState(null);
+  const [fileLink, setFileLink] = useState("");
   const [loomLink, setLoomLink] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingDoc, setEditingDoc] = useState(false);
@@ -1794,7 +1795,7 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
   const whatsappPhone = student.phone.replace(/[^\d]/g, "");
   const appointmentWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(appointmentMessage)}`;
 
-  const deliveryMessage = `Merhaba ${greetingName}, yeni döneme ait içerik metinleriniz hazırlandı. Panelinizden inceleyebilirsiniz: [Panel Linki]${
+  const deliveryMessage = `Merhaba ${greetingName}, yeni döneme ait içerik metinlerinize linki tıklayarak ulaşabilirsiniz: ${fileLink}${
     loomLink ? `\nAçıklama videosu: ${loomLink}` : ""
   }`;
   const deliveryWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(deliveryMessage)}`;
@@ -1902,6 +1903,25 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
 
             <div className="mt-3">
               <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+                Dosya linki (Google Drive/Docs vb.)
+              </label>
+              <div
+                className="flex items-center gap-2 rounded-xl px-3.5 py-2.5"
+                style={{ border: `1px solid ${line}`, background: canvas }}
+              >
+                <ExternalLink size={15} style={{ color: inkSoft }} />
+                <input
+                  value={fileLink}
+                  onChange={(e) => setFileLink(e.target.value)}
+                  placeholder="https://drive.google.com/..."
+                  className="w-full bg-transparent text-[13.5px] outline-none"
+                  style={{ color: ink }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
                 Açıklama videosu linki (Loom, opsiyonel)
               </label>
               <div
@@ -1919,7 +1939,7 @@ function StudentDetail({ student, onUpdateStudent, onDeleteStudent, back }) {
               </div>
             </div>
 
-            {fileName ? (
+            {fileLink ? (
               <a
                 href={deliveryWaLink}
                 target="_blank"
