@@ -2557,7 +2557,7 @@ function FinansPage({ payments }) {
 
 function PaymentsPage({ students, payments, setPayments, showToast }) {
   const [studentId, setStudentId] = useState(String(students[0]?.id || ""));
-  const [amount, setAmount] = useState("4500");
+  const [amount, setAmount] = useState("");
   const [date, setDate] = useState(TODAY_ISO);
   const [note, setNote] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -2641,6 +2641,7 @@ function PaymentsPage({ students, payments, setPayments, showToast }) {
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              placeholder="Örn. 4500"
               className="w-full rounded-xl px-3 py-2.5 text-[13.5px] outline-none"
               style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
             />
