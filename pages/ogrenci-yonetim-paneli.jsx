@@ -1304,7 +1304,7 @@ function AddStudentModal({ onClose, onAdd }) {
   );
 }
 
-function StudentsPage({ students, setStudents, openStudent }) {
+function StudentsPage({ students, addStudent, openStudent }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("Tümü");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -1318,8 +1318,8 @@ function StudentsPage({ students, setStudents, openStudent }) {
     return matchesQuery && matchesFilter;
   });
 
-  const handleAdd = (newStudent) => {
-    setStudents((prev) => [newStudent, ...prev]);
+  const handleAdd = async (newStudent) => {
+    await addStudent(newStudent);
     setShowAddModal(false);
   };
 
@@ -2555,7 +2555,7 @@ function FinansPage({ payments }) {
   );
 }
 
-function PaymentsPage({ students, payments, setPayments, showToast }) {
+function PaymentsPage({ students, payments, onAddPayment, showToast }) {
   const [studentId, setStudentId] = useState(String(students[0]?.id || ""));
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(TODAY_ISO);
@@ -2579,23 +2579,24 @@ function PaymentsPage({ students, payments, setPayments, showToast }) {
     return true;
   });
 
-  const addPayment = () => {
+  const handleAddPayment = async () => {
     const student = students.find((s) => s.id === Number(studentId));
     if (!student || !amount || !date) return;
-    const newPayment = {
-      id: Date.now(),
+    const nextDate = addDaysISO(date, 30);
+    const saved = await onAddPayment({
       studentId: student.id,
       studentName: student.name,
       amount: Number(amount),
       date,
       note,
-      nextDate: addDaysISO(date, 30),
-    };
-    setPayments((p) => [newPayment, ...p]);
+      nextDate,
+    });
+    if (!saved) return;
     setNote("");
+    setAmount("");
     showToast?.(
       "Ödeme kaydedildi",
-      `${student.name} için ${formatTRDate(date)} tarihli ödeme eklendi. Sonraki yenileme: ${formatTRDate(newPayment.nextDate)}.`
+      `${student.name} için ${formatTRDate(date)} tarihli ödeme eklendi. Sonraki yenileme: ${formatTRDate(nextDate)}.`
     );
   };
 
@@ -2675,7 +2676,7 @@ function PaymentsPage({ students, payments, setPayments, showToast }) {
           <p className="text-[12.5px]" style={{ color: inkSoft }}>
             Sonraki yenileme: <span style={{ color: ink, fontWeight: 500 }}>{date ? formatTRDate(addDaysISO(date, 30)) : "—"}</span>
           </p>
-          <PrimaryButton icon={Plus} onClick={addPayment}>
+          <PrimaryButton icon={Plus} onClick={handleAddPayment}>
             Ödemeyi kaydet
           </PrimaryButton>
         </div>
@@ -3030,6 +3031,65 @@ function NotificationToast({ toast, onClose }) {
 }
 
 /* ---------------------------------------------------------
+   Supabase <-> JS veri eşleme yardımcıları (students, payments)
+--------------------------------------------------------- */
+const STUDENT_FIELD_MAP = {
+  name: "name",
+  handle: "handle",
+  monthNumber: "month_number",
+  gender: "gender",
+  avatar: "avatar",
+  phone: "phone",
+  email: "email",
+  niche: "niche",
+  nextCall: "next_call",
+  nextDeliveryDate: "next_delivery_date",
+  notes: "notes",
+  docLink: "doc_link",
+};
+
+function studentToDb(s) {
+  const out = {};
+  for (const [jsKey, dbKey] of Object.entries(STUDENT_FIELD_MAP)) {
+    if (s[jsKey] !== undefined) out[dbKey] = s[jsKey] === "" ? null : s[jsKey];
+  }
+  return out;
+}
+
+function dbToStudent(row) {
+  const out = { id: row.id };
+  for (const [jsKey, dbKey] of Object.entries(STUDENT_FIELD_MAP)) {
+    out[jsKey] = row[dbKey];
+  }
+  return out;
+}
+
+const PAYMENT_FIELD_MAP = {
+  studentId: "student_id",
+  studentName: "student_name",
+  amount: "amount",
+  date: "date",
+  nextDate: "next_date",
+  note: "note",
+};
+
+function paymentToDb(p) {
+  const out = {};
+  for (const [jsKey, dbKey] of Object.entries(PAYMENT_FIELD_MAP)) {
+    if (p[jsKey] !== undefined) out[dbKey] = p[jsKey] === "" ? null : p[jsKey];
+  }
+  return out;
+}
+
+function dbToPayment(row) {
+  const out = { id: row.id };
+  for (const [jsKey, dbKey] of Object.entries(PAYMENT_FIELD_MAP)) {
+    out[jsKey] = row[dbKey];
+  }
+  return out;
+}
+
+/* ---------------------------------------------------------
    Root app
 --------------------------------------------------------- */
 export default function App() {
@@ -3037,8 +3097,9 @@ export default function App() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [page, setPage] = useState("dashboard");
-  const [students, setStudents] = useState(STUDENTS);
-  const [payments, setPayments] = useState(PAYMENTS_SEED);
+  const [students, setStudents] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [tasksByPeriod, setTasksByPeriod] = useState(DEFAULT_TASKS);
   const [scheduledTasks, setScheduledTasks] = useState(SCHEDULED_TASKS_SEED);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -3051,6 +3112,19 @@ export default function App() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setDataLoading(true);
+    Promise.all([
+      supabase.from("students").select("*").order("id", { ascending: true }),
+      supabase.from("payments").select("*").order("date", { ascending: false }),
+    ]).then(([studentsRes, paymentsRes]) => {
+      if (!studentsRes.error && studentsRes.data) setStudents(studentsRes.data.map(dbToStudent));
+      if (!paymentsRes.error && paymentsRes.data) setPayments(paymentsRes.data.map(dbToPayment));
+      setDataLoading(false);
+    });
+  }, [isAuthenticated]);
+
   const showToast = (title, body) => setToast({ title, body });
 
   const selectedStudent = students.find((s) => s.id === selectedStudentId) || null;
@@ -3060,14 +3134,39 @@ export default function App() {
     setPage("student-detail");
   };
 
-  const updateStudent = (id, updates) => {
-    setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+  const addStudent = async (formData) => {
+    const { id, ...rest } = formData;
+    const { data, error } = await supabase.from("students").insert(studentToDb(rest)).select().single();
+    if (error) {
+      showToast("Kaydedilemedi", "Öğrenci eklenirken bir sorun oluştu.");
+      return;
+    }
+    setStudents((prev) => [dbToStudent(data), ...prev]);
   };
 
-  const deleteStudent = (id) => {
+  const updateStudent = async (id, updates) => {
+    setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    const { error } = await supabase.from("students").update(studentToDb(updates)).eq("id", id);
+    if (error) showToast("Kaydedilemedi", "Değişiklik veritabanına yazılamadı.");
+  };
+
+  const deleteStudent = async (id) => {
     setStudents((prev) => prev.filter((s) => s.id !== id));
     setSelectedStudentId(null);
     setPage("students");
+    const { error } = await supabase.from("students").delete().eq("id", id);
+    if (error) showToast("Silinemedi", "Öğrenci veritabanından silinemedi.");
+  };
+
+  const addPayment = async (paymentData) => {
+    const { data, error } = await supabase.from("payments").insert(paymentToDb(paymentData)).select().single();
+    if (error) {
+      showToast("Kaydedilemedi", "Ödeme kaydedilirken bir sorun oluştu.");
+      return null;
+    }
+    const saved = dbToPayment(data);
+    setPayments((prev) => [saved, ...prev]);
+    return saved;
   };
 
   const setActive = (id) => {
@@ -3096,6 +3195,16 @@ export default function App() {
     return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
   }
 
+  if (dataLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center font-sans" style={{ background: canvas }}>
+        <p className="text-[14px]" style={{ color: inkSoft }}>
+          Veriler yükleniyor...
+        </p>
+      </div>
+    );
+  }
+
   const activeNavId = page === "student-detail" ? "students" : page;
 
   let content;
@@ -3113,7 +3222,7 @@ export default function App() {
       />
     );
   else if (page === "students")
-    content = <StudentsPage students={students} setStudents={setStudents} openStudent={openStudent} />;
+    content = <StudentsPage students={students} addStudent={addStudent} openStudent={openStudent} />;
   else if (page === "student-detail")
     content = (
       <StudentDetail
@@ -3135,7 +3244,7 @@ export default function App() {
       />
     );
   else if (page === "payments")
-    content = <PaymentsPage students={students} payments={payments} setPayments={setPayments} showToast={showToast} />;
+    content = <PaymentsPage students={students} payments={payments} onAddPayment={addPayment} showToast={showToast} />;
   else if (page === "finans") content = <FinansPage payments={payments} />;
   else if (page === "settings") content = <SettingsPage showToast={showToast} />;
 
