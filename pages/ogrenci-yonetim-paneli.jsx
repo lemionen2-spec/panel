@@ -381,7 +381,7 @@ function Sidebar({ active, setActive, onLogout }) {
               Lemi Önen
             </p>
             <p className="truncate text-[12px]" style={{ color: inkSoft }}>
-              @lemi.onen
+              @lemionen
             </p>
           </div>
         </div>
@@ -815,10 +815,22 @@ const MESSAGE_TEMPLATES = [
 ];
 
 function QuickMessageTemplates({ showToast }) {
-  const [templates, setTemplates] = useState(MESSAGE_TEMPLATES);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newText, setNewText] = useState("");
+
+  useEffect(() => {
+    supabase
+      .from("message_templates")
+      .select("*")
+      .order("id", { ascending: true })
+      .then(({ data, error }) => {
+        if (!error && data) setTemplates(data.map(dbToTemplate));
+        setLoading(false);
+      });
+  }, []);
 
   const copy = (tpl) => {
     try {
@@ -829,15 +841,24 @@ function QuickMessageTemplates({ showToast }) {
     }
   };
 
-  const addTemplate = () => {
+  const addTemplate = async () => {
     if (!newTitle.trim() || !newText.trim()) return;
-    setTemplates((prev) => [...prev, { id: Date.now(), title: newTitle.trim(), text: newText.trim() }]);
+    const { data, error } = await supabase
+      .from("message_templates")
+      .insert(templateToDb({ title: newTitle.trim(), text: newText.trim() }))
+      .select()
+      .single();
+    if (error) return;
+    setTemplates((prev) => [...prev, dbToTemplate(data)]);
     setNewTitle("");
     setNewText("");
     setShowAdd(false);
   };
 
-  const deleteTemplate = (id) => setTemplates((prev) => prev.filter((t) => t.id !== id));
+  const deleteTemplate = async (id) => {
+    setTemplates((prev) => prev.filter((t) => t.id !== id));
+    await supabase.from("message_templates").delete().eq("id", id);
+  };
 
   return (
     <Card padded={false}>
@@ -881,7 +902,16 @@ function QuickMessageTemplates({ showToast }) {
       )}
 
       <div className="mt-4">
-        {templates.map((tpl) => (
+        {loading ? (
+          <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+            Yükleniyor...
+          </p>
+        ) : templates.length === 0 ? (
+          <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+            Henüz şablon yok.
+          </p>
+        ) : (
+          templates.map((tpl) => (
           <div
             key={tpl.id}
             className="flex items-start justify-between gap-3 px-6 py-3.5"
@@ -912,7 +942,8 @@ function QuickMessageTemplates({ showToast }) {
               </button>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
     </Card>
   );
@@ -1423,72 +1454,7 @@ function StudentsPage({ students, addStudent, openStudent }) {
 /* ---------------------------------------------------------
    Görüşme notları — tarihsel kayıt
 --------------------------------------------------------- */
-const MOCK_SESSIONS = [
-  {
-    id: 8,
-    date: "3 Eylül 2026",
-    label: "8. Görüşme",
-    discussed: "Reels tempo çalışması ve hook geliştirme üzerine konuşuldu, son 2 haftanın verileri incelendi.",
-    problems: "Yayın saatleri düzensiz, akşam 21:00 sonrası paylaşım yapılamıyor.",
-    nextSteps: "Bu haftaki hedef: 3 viral deneme + paylaşım saatini 19:00'a çekmek.",
-  },
-  {
-    id: 7,
-    date: "27 Ağustos 2026",
-    label: "7. Görüşme",
-    discussed: "Yayın sıklığı haftada 4'e çıkarıldı, içerik sütunları netleşti: eğitim, motivasyon, günlük yaşam.",
-    problems: "Video düzenleme için ayrılan süre yetersiz kalıyor.",
-    nextSteps: "CapCut şablonları hazırlanacak, düzenleme süresi kısaltılacak.",
-  },
-  {
-    id: 6,
-    date: "20 Ağustos 2026",
-    label: "6. Görüşme",
-    discussed: "İlk küçük iş birliği teklifi geldi, biyografi ve vurgu renkleri revize edildi.",
-    problems: "İş birliği teklifinin şartları net değil.",
-    nextSteps: "Marka ile ön görüşme yapılacak, fiyat teklifi hazırlanacak.",
-  },
-  {
-    id: 5,
-    date: "13 Ağustos 2026",
-    label: "5. Görüşme",
-    discussed: "Geçen haftanın etkileşim verileri incelendi: %4.2'den %5.1'e çıktı.",
-    problems: "Yorumlara geç dönülüyor, ilk saatteki etkileşim kaçırılıyor.",
-    nextSteps: "Paylaşımdan sonraki ilk 30 dk yorumlara aktif dönülecek.",
-  },
-  {
-    id: 4,
-    date: "6 Ağustos 2026",
-    label: "4. Görüşme",
-    discussed: "Hedef kitle analizi tamamlandı, niş daha da daraltıldı: çalışan kadınlar için ev egzersizi.",
-    problems: "İçerik genel kalıyor, dar kitleye özel dil kullanılmıyor.",
-    nextSteps: "Sonraki 5 gönderi doğrudan bu alt kitleye hitap edecek.",
-  },
-  {
-    id: 3,
-    date: "30 Temmuz 2026",
-    label: "3. Görüşme",
-    discussed: "İlk 2 haftanın sonuçları değerlendirildi: +80 takipçi, ilk viral Reels denemesi yapıldı.",
-    problems: "Viral olan içeriğin neden işe yaradığı netleşmedi.",
-    nextSteps: "Viral gönderi analiz edilip formül tekrar denenecek.",
-  },
-  {
-    id: 2,
-    date: "23 Temmuz 2026",
-    label: "2. Görüşme",
-    discussed: "İçerik takvimi birlikte oluşturuldu, ilk haftanın gönderileri planlandı.",
-    problems: "Çekim için yeterli ışık/ortam yok.",
-    nextSteps: "Basit bir çekim köşesi kurulacak (ışık + fon önerisi verildi).",
-  },
-  {
-    id: 1,
-    date: "16 Temmuz 2026",
-    label: "1. Görüşme — Marka Analizi",
-    discussed: "Marka analiz formu birlikte gözden geçirildi, ilk haftalık içerik planı oluşturuldu.",
-    problems: "Niş konusunda kararsızlık var, iki farklı alan arasında gidip geliyor.",
-    nextSteps: "Bir hafta boyunca tek nişte içerik üretilip sonuçlar değerlendirilecek.",
-  },
-];
+const MOCK_SESSIONS = [];
 
 const NOTE_SECTIONS = [
   { key: "discussed", label: "Konuşulanlar" },
@@ -1496,20 +1462,63 @@ const NOTE_SECTIONS = [
   { key: "nextSteps", label: "Bir Sonraki Görüşmeye Kadar Yapılacaklar" },
 ];
 
-function MeetingNotesHistory() {
-  const [sessions, setSessions] = useState(MOCK_SESSIONS);
-  const [selectedId, setSelectedId] = useState(MOCK_SESSIONS[0].id);
+function MeetingNotesHistory({ studentId }) {
+  const [sessions, setSessions] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const selected = sessions.find((s) => s.id === selectedId) || sessions[0];
+  useEffect(() => {
+    setLoading(true);
+    supabase
+      .from("meeting_notes")
+      .select("*")
+      .eq("student_id", studentId)
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) {
+          const mapped = data.map(dbToNote);
+          setSessions(mapped);
+          setSelectedId(mapped[0]?.id || null);
+        }
+        setLoading(false);
+      });
+  }, [studentId]);
+
+  const selected = sessions.find((s) => s.id === selectedId) || sessions[0] || null;
 
   const updateField = (field, value) =>
     setSessions((prev) => prev.map((s) => (s.id === selectedId ? { ...s, [field]: value } : s)));
 
-  const addSession = () => {
-    const newId = Math.max(...sessions.map((s) => s.id)) + 1;
-    const newSession = { id: newId, date: "Bugün", label: `${newId}. Görüşme`, discussed: "", problems: "", nextSteps: "" };
-    setSessions([newSession, ...sessions]);
-    setSelectedId(newId);
+  const addSession = async () => {
+    const nextNumber = sessions.length + 1;
+    const { data, error } = await supabase
+      .from("meeting_notes")
+      .insert(
+        noteToDb({
+          studentId,
+          date: "Bugün",
+          label: `${nextNumber}. Görüşme`,
+          discussed: "",
+          problems: "",
+          nextSteps: "",
+        })
+      )
+      .select()
+      .single();
+    if (error) return;
+    const saved = dbToNote(data);
+    setSessions((prev) => [saved, ...prev]);
+    setSelectedId(saved.id);
+  };
+
+  const saveNote = async () => {
+    if (!selected) return;
+    await supabase
+      .from("meeting_notes")
+      .update(
+        noteToDb({ discussed: selected.discussed, problems: selected.problems, nextSteps: selected.nextSteps })
+      )
+      .eq("id", selected.id);
   };
 
   return (
@@ -1520,7 +1529,11 @@ function MeetingNotesHistory() {
             Görüşme notları
           </p>
           <p className="mt-0.5 text-[13px]" style={{ color: inkSoft }}>
-            {sessions.length} haftalık görüşme kaydı · geçmişe dönük görüntüle
+            {loading
+              ? "Yükleniyor..."
+              : sessions.length > 0
+              ? `${sessions.length} haftalık görüşme kaydı · geçmişe dönük görüntüle`
+              : "Henüz görüşme kaydı yok"}
           </p>
         </div>
         <div className="shrink-0">
@@ -1530,71 +1543,79 @@ function MeetingNotesHistory() {
         </div>
       </div>
 
-      <div className="mt-5 px-6">
-        <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
-          Tarih seç
-        </label>
-        <div className="relative">
-          <select
-            value={selectedId}
-            onChange={(e) => setSelectedId(Number(e.target.value))}
-            className="w-full appearance-none rounded-xl px-3.5 py-2.5 pr-10 text-[14px] outline-none"
-            style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
-          >
-            {sessions.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.date} · {s.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={16}
-            className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
-            style={{ color: inkSoft }}
-          />
-        </div>
-      </div>
-
-      <div className="px-6 pb-6 pt-4">
-        <div className="mb-4 flex items-center gap-2">
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: accentSoft }}
-          >
-            <CalendarDays size={14} style={{ color: accent }} />
-          </div>
-          <div>
-            <p className="text-[13.5px] font-medium" style={{ color: ink }}>
-              {selected.label}
-            </p>
-            <p className="text-[12px]" style={{ color: inkSoft }}>
-              {selected.date}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          {NOTE_SECTIONS.map((section) => (
-            <div key={section.key}>
-              <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
-                {section.label}
-              </label>
-              <textarea
-                value={selected[section.key]}
-                onChange={(e) => updateField(section.key, e.target.value)}
-                rows={2}
-                placeholder="..."
-                className="w-full resize-none rounded-xl p-3 text-[13.5px] leading-relaxed outline-none"
-                style={{ border: `1px solid ${line}`, color: ink, background: canvas }}
+      {!loading && !selected ? (
+        <p className="px-6 py-8 text-center text-[13.5px]" style={{ color: inkSoft }}>
+          İlk görüşme notunu eklemek için "Yeni görüşme ekle"ye tıkla.
+        </p>
+      ) : selected ? (
+        <>
+          <div className="mt-5 px-6">
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Tarih seç
+            </label>
+            <div className="relative">
+              <select
+                value={selectedId}
+                onChange={(e) => setSelectedId(Number(e.target.value))}
+                className="w-full appearance-none rounded-xl px-3.5 py-2.5 pr-10 text-[14px] outline-none"
+                style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+              >
+                {sessions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.date} · {s.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                style={{ color: inkSoft }}
               />
             </div>
-          ))}
-        </div>
+          </div>
 
-        <div className="mt-3 flex justify-end">
-          <PrimaryButton>Notu kaydet</PrimaryButton>
-        </div>
-      </div>
+          <div className="px-6 pb-6 pt-4">
+            <div className="mb-4 flex items-center gap-2">
+              <div
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: accentSoft }}
+              >
+                <CalendarDays size={14} style={{ color: accent }} />
+              </div>
+              <div>
+                <p className="text-[13.5px] font-medium" style={{ color: ink }}>
+                  {selected.label}
+                </p>
+                <p className="text-[12px]" style={{ color: inkSoft }}>
+                  {selected.date}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {NOTE_SECTIONS.map((section) => (
+                <div key={section.key}>
+                  <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+                    {section.label}
+                  </label>
+                  <textarea
+                    value={selected[section.key] || ""}
+                    onChange={(e) => updateField(section.key, e.target.value)}
+                    rows={2}
+                    placeholder="..."
+                    className="w-full resize-none rounded-xl p-3 text-[13.5px] leading-relaxed outline-none"
+                    style={{ border: `1px solid ${line}`, color: ink, background: canvas }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 flex justify-end">
+              <PrimaryButton onClick={saveNote}>Notu kaydet</PrimaryButton>
+            </div>
+          </div>
+        </>
+      ) : null}
     </Card>
   );
 }
@@ -1950,7 +1971,7 @@ function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, ba
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-5">
         <div className="flex flex-col gap-5">
-          <MeetingNotesHistory />
+          <MeetingNotesHistory studentId={student.id} />
 
           <Card>
             <SectionTitle>Hazırlanan dosyayı yükle & gönder</SectionTitle>
@@ -3087,6 +3108,42 @@ function dbToPayment(row) {
     out[jsKey] = row[dbKey];
   }
   return out;
+}
+
+const NOTE_FIELD_MAP = {
+  studentId: "student_id",
+  date: "session_date",
+  label: "session_label",
+  discussed: "discussed",
+  problems: "problems",
+  nextSteps: "next_steps",
+};
+
+function noteToDb(n) {
+  const out = {};
+  for (const [jsKey, dbKey] of Object.entries(NOTE_FIELD_MAP)) {
+    if (n[jsKey] !== undefined) out[dbKey] = n[jsKey] === "" ? null : n[jsKey];
+  }
+  return out;
+}
+
+function dbToNote(row) {
+  const out = { id: row.id };
+  for (const [jsKey, dbKey] of Object.entries(NOTE_FIELD_MAP)) {
+    out[jsKey] = row[dbKey];
+  }
+  return out;
+}
+
+function templateToDb(t) {
+  const out = {};
+  if (t.title !== undefined) out.title = t.title;
+  if (t.text !== undefined) out.body = t.text;
+  return out;
+}
+
+function dbToTemplate(row) {
+  return { id: row.id, title: row.title, text: row.body };
 }
 
 /* ---------------------------------------------------------
