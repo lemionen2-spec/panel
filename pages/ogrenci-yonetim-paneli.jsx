@@ -511,52 +511,68 @@ function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks
   const conflicts = period === "day" ? findTimeConflicts(tasks) : new Set();
   const todaysScheduled = scheduledTasks.filter((t) => t.dueDate === TODAY_ISO && !t.done);
 
-  const toggle = (id) =>
+  const toggle = (id) => {
     setTasksByPeriod((prev) => ({
       ...prev,
       [period]: prev[period].map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
     }));
+    const t = tasksByPeriod[period].find((x) => x.id === id);
+    if (t) supabase.from("planner_tasks").update({ done: !t.done }).eq("id", id);
+  };
 
-  const deleteTask = (id) =>
+  const deleteTask = (id) => {
     setTasksByPeriod((prev) => ({
       ...prev,
       [period]: prev[period].filter((t) => t.id !== id),
     }));
+    supabase.from("planner_tasks").delete().eq("id", id);
+  };
 
-  const addTask = () => {
+  const addTask = async () => {
     if (!title.trim()) return;
+    const payload = {
+      period,
+      title,
+      minutes: Number(minutes) || 30,
+      done: false,
+      task_time: period === "day" && taskTime ? taskTime : null,
+    };
+    const { data, error } = await supabase.from("planner_tasks").insert(payload).select().single();
+    if (error) return;
     setTasksByPeriod((prev) => ({
       ...prev,
-      [period]: [
-        ...prev[period],
-        { id: Date.now(), title, minutes: Number(minutes) || 30, done: false, time: period === "day" ? taskTime : "" },
-      ],
+      [period]: [...prev[period], dbToPlannerTask(data)],
     }));
     setTitle("");
     setMinutes("");
     setTaskTime("");
   };
 
-  const toggleScheduled = (id) =>
+  const toggleScheduled = (id) => {
     setScheduledTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+    const t = scheduledTasks.find((x) => x.id === id);
+    if (t) supabase.from("scheduled_tasks").update({ done: !t.done }).eq("id", id);
+  };
 
-  const deleteScheduled = (id) => setScheduledTasks((prev) => prev.filter((t) => t.id !== id));
+  const deleteScheduled = (id) => {
+    setScheduledTasks((prev) => prev.filter((t) => t.id !== id));
+    supabase.from("scheduled_tasks").delete().eq("id", id);
+  };
 
-  const addScheduledTask = () => {
+  const addScheduledTask = async () => {
     if (!schedTitle.trim() || !schedDate) return;
     const student = students.find((s) => s.id === Number(schedStudentId));
-    setScheduledTasks((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        title: schedTitle.trim(),
-        minutes: Number(schedMinutes) || 30,
-        done: false,
-        studentId: student?.id,
-        studentName: student?.name || "—",
-        dueDate: schedDate,
-      },
-    ]);
+    const payload = {
+      title: schedTitle.trim(),
+      minutes: Number(schedMinutes) || 30,
+      done: false,
+      student_id: student?.id || null,
+      student_name: student?.name || "—",
+      due_date: schedDate,
+    };
+    const { data, error } = await supabase.from("scheduled_tasks").insert(payload).select().single();
+    if (error) return;
+    setScheduledTasks((prev) => [...prev, dbToScheduledTask(data)]);
     setSchedTitle("");
     setShowScheduleForm(false);
   };
@@ -3146,6 +3162,22 @@ function dbToTemplate(row) {
   return { id: row.id, title: row.title, text: row.body };
 }
 
+function dbToPlannerTask(row) {
+  return { id: row.id, title: row.title, minutes: row.minutes, done: row.done, time: row.task_time || "" };
+}
+
+function dbToScheduledTask(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    minutes: row.minutes,
+    done: row.done,
+    studentId: row.student_id,
+    studentName: row.student_name,
+    dueDate: row.due_date,
+  };
+}
+
 /* ---------------------------------------------------------
    Root app
 --------------------------------------------------------- */
@@ -3157,8 +3189,8 @@ export default function App() {
   const [students, setStudents] = useState([]);
   const [payments, setPayments] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const [tasksByPeriod, setTasksByPeriod] = useState(DEFAULT_TASKS);
-  const [scheduledTasks, setScheduledTasks] = useState(SCHEDULED_TASKS_SEED);
+  const [tasksByPeriod, setTasksByPeriod] = useState({ day: [], week: [], month: [] });
+  const [scheduledTasks, setScheduledTasks] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -3175,9 +3207,19 @@ export default function App() {
     Promise.all([
       supabase.from("students").select("*").order("id", { ascending: true }),
       supabase.from("payments").select("*").order("date", { ascending: false }),
-    ]).then(([studentsRes, paymentsRes]) => {
+      supabase.from("planner_tasks").select("*").order("id", { ascending: true }),
+      supabase.from("scheduled_tasks").select("*").order("due_date", { ascending: true }),
+    ]).then(([studentsRes, paymentsRes, plannerRes, schedRes]) => {
       if (!studentsRes.error && studentsRes.data) setStudents(studentsRes.data.map(dbToStudent));
       if (!paymentsRes.error && paymentsRes.data) setPayments(paymentsRes.data.map(dbToPayment));
+      if (!plannerRes.error && plannerRes.data) {
+        const grouped = { day: [], week: [], month: [] };
+        plannerRes.data.forEach((row) => {
+          if (grouped[row.period]) grouped[row.period].push(dbToPlannerTask(row));
+        });
+        setTasksByPeriod(grouped);
+      }
+      if (!schedRes.error && schedRes.data) setScheduledTasks(schedRes.data.map(dbToScheduledTask));
       setDataLoading(false);
     });
   }, [isAuthenticated]);
