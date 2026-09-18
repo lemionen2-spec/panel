@@ -484,7 +484,7 @@ function findTimeConflicts(tasks) {
   return conflicts;
 }
 
-function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks }) {
+function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks, showToast }) {
   const [period, setPeriod] = useState("day");
   const [title, setTitle] = useState("");
   const [minutes, setMinutes] = useState("");
@@ -520,12 +520,24 @@ function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks
     if (t) supabase.from("planner_tasks").update({ done: !t.done }).eq("id", id);
   };
 
-  const deleteTask = (id) => {
+  const deleteTask = async (id) => {
+    const removed = tasksByPeriod[period].find((t) => t.id === id);
     setTasksByPeriod((prev) => ({
       ...prev,
       [period]: prev[period].filter((t) => t.id !== id),
     }));
-    supabase.from("planner_tasks").delete().eq("id", id);
+    const { error } = await supabase.from("planner_tasks").delete().eq("id", id);
+    if (error) {
+      // Silme veritabanında başarısız oldu (ör. RLS izni) — geri al ki sayfa
+      // yenilenince görev tekrar "geri gelmiş" gibi görünmesin.
+      if (removed) {
+        setTasksByPeriod((prev) => ({
+          ...prev,
+          [period]: [...prev[period], removed],
+        }));
+      }
+      showToast && showToast("Silinemedi", "Görev veritabanından silinemedi.");
+    }
   };
 
   const addTask = async () => {
@@ -554,9 +566,14 @@ function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks
     if (t) supabase.from("scheduled_tasks").update({ done: !t.done }).eq("id", id);
   };
 
-  const deleteScheduled = (id) => {
+  const deleteScheduled = async (id) => {
+    const removed = scheduledTasks.find((t) => t.id === id);
     setScheduledTasks((prev) => prev.filter((t) => t.id !== id));
-    supabase.from("scheduled_tasks").delete().eq("id", id);
+    const { error } = await supabase.from("scheduled_tasks").delete().eq("id", id);
+    if (error) {
+      if (removed) setScheduledTasks((prev) => [...prev, removed]);
+      showToast && showToast("Silinemedi", "Planlanan iş veritabanından silinemedi.");
+    }
   };
 
   const addScheduledTask = async () => {
@@ -1043,7 +1060,7 @@ function Dashboard({ students, payments, tasksByPeriod, setTasksByPeriod, schedu
       </div>
 
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} />
+        <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} showToast={showToast} />
         <QuickMessageTemplates showToast={showToast} />
       </div>
 
@@ -2207,7 +2224,7 @@ function getCalendarWeek() {
   return days;
 }
 
-function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks }) {
+function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks, showToast }) {
   const [showPlanner, setShowPlanner] = useState(false);
   const [range, setRange] = useState("week"); // "week" | "all"
   const [events, setEvents] = useState([]);
@@ -2376,7 +2393,7 @@ function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTask
 
       {showPlanner && (
         <div className="mt-6">
-          <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} />
+          <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} showToast={showToast} />
         </div>
       )}
     </div>
@@ -3340,6 +3357,7 @@ export default function App() {
         setTasksByPeriod={setTasksByPeriod}
         scheduledTasks={scheduledTasks}
         setScheduledTasks={setScheduledTasks}
+        showToast={showToast}
       />
     );
   else if (page === "payments")
