@@ -2609,13 +2609,19 @@ function FinansPage({ payments }) {
   );
 }
 
-function PaymentsPage({ students, payments, onAddPayment, showToast }) {
+function PaymentsPage({ students, payments, onAddPayment, onUpdatePayment, onDeletePayment, showToast }) {
   const [studentId, setStudentId] = useState(String(students[0]?.id || ""));
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(TODAY_ISO);
   const [note, setNote] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+
+  const [editingId, setEditingId] = useState(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editNote, setEditNote] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const latestPerStudent = students.map((s) => {
     const studentPayments = payments.filter((p) => p.studentId === s.id).sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -2652,6 +2658,42 @@ function PaymentsPage({ students, payments, onAddPayment, showToast }) {
       "Ödeme kaydedildi",
       `${student.name} için ${formatTRDate(date)} tarihli ödeme eklendi. Sonraki yenileme: ${formatTRDate(nextDate)}.`
     );
+  };
+
+  const startEdit = (p) => {
+    setConfirmDeleteId(null);
+    setEditingId(p.id);
+    setEditAmount(String(p.amount));
+    setEditDate(p.date);
+    setEditNote(p.note || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditAmount("");
+    setEditDate("");
+    setEditNote("");
+  };
+
+  const saveEdit = async (p) => {
+    if (!editAmount || !editDate) return;
+    const nextDate = addDaysISO(editDate, 30);
+    const ok = await onUpdatePayment?.(p.id, {
+      amount: Number(editAmount),
+      date: editDate,
+      note: editNote,
+      nextDate,
+    });
+    if (ok) {
+      showToast?.("Ödeme güncellendi", `${p.studentName} için kayıt güncellendi.`);
+      cancelEdit();
+    }
+  };
+
+  const confirmDelete = async (p) => {
+    await onDeletePayment?.(p.id);
+    setConfirmDeleteId(null);
+    showToast?.("Ödeme silindi", `${p.studentName} için ${formatTRDate(p.date)} tarihli kayıt silindi.`);
   };
 
   return (
@@ -2834,24 +2876,116 @@ function PaymentsPage({ students, payments, onAddPayment, showToast }) {
             filteredPayments.map((p, i) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between px-6 py-4"
+                className="px-6 py-4"
                 style={{ borderTop: i === 0 ? "none" : `1px solid ${line}` }}
               >
-                <div className="flex items-center gap-3">
-                  <CreditCard size={16} style={{ color: inkSoft }} />
-                  <div>
-                    <p className="text-[14px] font-medium" style={{ color: ink }}>
-                      {p.studentName}
-                    </p>
-                    <p className="text-[12.5px]" style={{ color: inkSoft }}>
-                      {formatTRDate(p.date)} · Sonraki: {formatTRDate(p.nextDate)}
-                      {p.note ? ` · ${p.note}` : ""}
-                    </p>
+                {editingId === p.id ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <input
+                        type="number"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                        placeholder="Tutar (₺)"
+                        className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
+                        style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+                      />
+                      <input
+                        type="date"
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
+                        style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+                      />
+                      <input
+                        value={editNote}
+                        onChange={(e) => setEditNote(e.target.value)}
+                        placeholder="Not (opsiyonel)"
+                        className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
+                        style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[12px]" style={{ color: inkSoft }}>
+                        Sonraki yenileme: <span style={{ color: ink, fontWeight: 500 }}>{editDate ? formatTRDate(addDaysISO(editDate, 30)) : "—"}</span>
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={cancelEdit}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg"
+                          style={{ background: canvas, color: inkSoft }}
+                        >
+                          <X size={14} />
+                        </button>
+                        <button
+                          onClick={() => saveEdit(p)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
+                          style={{ background: accent }}
+                        >
+                          <Check size={14} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <span className="text-[14px] font-semibold" style={{ color: ink }}>
-                  ₺{p.amount.toLocaleString("tr-TR")}
-                </span>
+                ) : confirmDeleteId === p.id ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[13px]" style={{ color: ink }}>
+                      {p.studentName} — {formatTRDate(p.date)} tarihli ₺{p.amount.toLocaleString("tr-TR")} kayıt silinsin mi?
+                    </p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="rounded-lg px-3 py-1.5 text-[12.5px] font-medium"
+                        style={{ background: canvas, color: inkSoft }}
+                      >
+                        Vazgeç
+                      </button>
+                      <button
+                        onClick={() => confirmDelete(p)}
+                        className="rounded-lg px-3 py-1.5 text-[12.5px] font-medium text-white"
+                        style={{ background: "#DC5B4E" }}
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CreditCard size={16} style={{ color: inkSoft }} />
+                      <div>
+                        <p className="text-[14px] font-medium" style={{ color: ink }}>
+                          {p.studentName}
+                        </p>
+                        <p className="text-[12.5px]" style={{ color: inkSoft }}>
+                          {formatTRDate(p.date)} · Sonraki: {formatTRDate(p.nextDate)}
+                          {p.note ? ` · ${p.note}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[14px] font-semibold" style={{ color: ink }}>
+                        ₺{p.amount.toLocaleString("tr-TR")}
+                      </span>
+                      <button
+                        onClick={() => startEdit(p)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg"
+                        style={{ color: inkSoft }}
+                        title="Düzenle"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(p.id)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg"
+                        style={{ color: inkSoft }}
+                        title="Sil"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -3285,6 +3419,35 @@ export default function App() {
     return saved;
   };
 
+  const updatePayment = async (id, updates) => {
+    const previous = payments.find((p) => p.id === id);
+    setPayments((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+    const { error } = await supabase.from("payments").update(paymentToDb(updates)).eq("id", id);
+    if (error) {
+      if (previous) setPayments((prev) => prev.map((p) => (p.id === id ? previous : p)));
+      showToast("Kaydedilemedi", "Ödeme güncellenirken bir sorun oluştu.");
+      return false;
+    }
+    return true;
+  };
+
+  const deletePayment = async (id) => {
+    const removed = payments.find((p) => p.id === id);
+    const removedIndex = payments.findIndex((p) => p.id === id);
+    setPayments((prev) => prev.filter((p) => p.id !== id));
+    const { error } = await supabase.from("payments").delete().eq("id", id);
+    if (error) {
+      if (removed) {
+        setPayments((prev) => {
+          const next = [...prev];
+          next.splice(removedIndex, 0, removed);
+          return next;
+        });
+      }
+      showToast("Silinemedi", "Ödeme veritabanından silinemedi.");
+    }
+  };
+
   const setActive = (id) => {
     setSelectedStudentId(null);
     setPage(id);
@@ -3361,7 +3524,16 @@ export default function App() {
       />
     );
   else if (page === "payments")
-    content = <PaymentsPage students={students} payments={payments} onAddPayment={addPayment} showToast={showToast} />;
+    content = (
+      <PaymentsPage
+        students={students}
+        payments={payments}
+        onAddPayment={addPayment}
+        onUpdatePayment={updatePayment}
+        onDeletePayment={deletePayment}
+        showToast={showToast}
+      />
+    );
   else if (page === "finans") content = <FinansPage payments={payments} />;
   else if (page === "settings") content = <SettingsPage showToast={showToast} />;
 
