@@ -484,7 +484,7 @@ function findTimeConflicts(tasks) {
   return conflicts;
 }
 
-function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks, showToast }) {
+function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks }) {
   const [period, setPeriod] = useState("day");
   const [title, setTitle] = useState("");
   const [minutes, setMinutes] = useState("");
@@ -520,24 +520,12 @@ function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks
     if (t) supabase.from("planner_tasks").update({ done: !t.done }).eq("id", id);
   };
 
-  const deleteTask = async (id) => {
-    const removed = tasksByPeriod[period].find((t) => t.id === id);
+  const deleteTask = (id) => {
     setTasksByPeriod((prev) => ({
       ...prev,
       [period]: prev[period].filter((t) => t.id !== id),
     }));
-    const { error } = await supabase.from("planner_tasks").delete().eq("id", id);
-    if (error) {
-      // Silme veritabanında başarısız oldu (ör. RLS izni) — geri al ki sayfa
-      // yenilenince görev tekrar "geri gelmiş" gibi görünmesin.
-      if (removed) {
-        setTasksByPeriod((prev) => ({
-          ...prev,
-          [period]: [...prev[period], removed],
-        }));
-      }
-      showToast && showToast("Silinemedi", "Görev veritabanından silinemedi.");
-    }
+    supabase.from("planner_tasks").delete().eq("id", id);
   };
 
   const addTask = async () => {
@@ -566,14 +554,9 @@ function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks
     if (t) supabase.from("scheduled_tasks").update({ done: !t.done }).eq("id", id);
   };
 
-  const deleteScheduled = async (id) => {
-    const removed = scheduledTasks.find((t) => t.id === id);
+  const deleteScheduled = (id) => {
     setScheduledTasks((prev) => prev.filter((t) => t.id !== id));
-    const { error } = await supabase.from("scheduled_tasks").delete().eq("id", id);
-    if (error) {
-      if (removed) setScheduledTasks((prev) => [...prev, removed]);
-      showToast && showToast("Silinemedi", "Planlanan iş veritabanından silinemedi.");
-    }
+    supabase.from("scheduled_tasks").delete().eq("id", id);
   };
 
   const addScheduledTask = async () => {
@@ -1060,7 +1043,7 @@ function Dashboard({ students, payments, tasksByPeriod, setTasksByPeriod, schedu
       </div>
 
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} showToast={showToast} />
+        <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} />
         <QuickMessageTemplates showToast={showToast} />
       </div>
 
@@ -1368,23 +1351,41 @@ function AddStudentModal({ onClose, onAdd }) {
   );
 }
 
-function StudentsPage({ students, addStudent, openStudent }) {
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  const ms = new Date(TODAY_ISO + "T00:00:00") - new Date(dateStr + "T00:00:00");
+  return Math.max(0, Math.round(ms / 86400000));
+}
+
+function StudentsPage({ students, addStudent, openStudent, onUpdateStudent }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("Tümü");
+  const [statusTab, setStatusTab] = useState("aktif");
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const filtered = students.filter((s) => {
+  const activeStudents = students.filter((s) => s.status !== "pasif");
+  const passiveStudents = students.filter((s) => s.status === "pasif");
+
+  const filtered = (statusTab === "aktif" ? activeStudents : passiveStudents).filter((s) => {
     const matchesQuery =
       s.name.toLowerCase().includes(query.toLowerCase()) ||
       s.handle.toLowerCase().includes(query.toLowerCase());
     const matchesFilter =
-      filter === "Tümü" || (filter === "1. Ay" ? s.monthNumber === 1 : s.monthNumber >= 2);
+      statusTab === "pasif" ||
+      filter === "Tümü" ||
+      (filter === "1. Ay" ? s.monthNumber === 1 : s.monthNumber >= 2);
     return matchesQuery && matchesFilter;
   });
 
   const handleAdd = async (newStudent) => {
     await addStudent(newStudent);
     setShowAddModal(false);
+  };
+
+  const reactivate = (s) => {
+    if (window.confirm(`${s.name} adlı öğrenciyi tekrar aktif etmek istediğine emin misin?`)) {
+      onUpdateStudent(s.id, { status: "aktif", passiveSince: "", passiveNote: "" });
+    }
   };
 
   return (
@@ -1395,12 +1396,32 @@ function StudentsPage({ students, addStudent, openStudent }) {
             Öğrencilerim
           </h1>
           <p className="mt-1 text-[14px]" style={{ color: inkSoft }}>
-            {students.length} öğrenci · Lemi Önen Koçluk Programı
+            {activeStudents.length} aktif · {passiveStudents.length} pasif · Lemi Önen Koçluk Programı
           </p>
         </div>
         <PrimaryButton icon={Plus} onClick={() => setShowAddModal(true)} full={false}>
           <span className="shrink-0 whitespace-nowrap">Yeni öğrenci ekle</span>
         </PrimaryButton>
+      </div>
+
+      <div className="mb-4 flex items-center gap-1.5 rounded-xl p-1" style={{ background: canvas, width: "fit-content" }}>
+        {[
+          { id: "aktif", label: `Aktif (${activeStudents.length})` },
+          { id: "pasif", label: `Pasif (${passiveStudents.length})` },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setStatusTab(t.id)}
+            className="rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+            style={{
+              background: statusTab === t.id ? "#fff" : "transparent",
+              color: statusTab === t.id ? ink : inkSoft,
+              boxShadow: statusTab === t.id ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -1417,65 +1438,138 @@ function StudentsPage({ students, addStudent, openStudent }) {
             style={{ color: ink }}
           />
         </div>
-        <div className="flex items-center gap-1.5 rounded-xl p-1" style={{ background: canvas }}>
-          {["Tümü", "1. Ay", "2. Ay ve sonrası"].map((f) => (
+        {statusTab === "aktif" && (
+          <div className="flex items-center gap-1.5 rounded-xl p-1" style={{ background: canvas }}>
+            {["Tümü", "1. Ay", "2. Ay ve sonrası"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className="rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors"
+                style={{
+                  background: filter === f ? "#fff" : "transparent",
+                  color: filter === f ? ink : inkSoft,
+                  boxShadow: filter === f ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+                }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {statusTab === "aktif" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {filtered.map((s) => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className="rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors"
-              style={{
-                background: filter === f ? "#fff" : "transparent",
-                color: filter === f ? ink : inkSoft,
-                boxShadow: filter === f ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
-              }}
+              key={s.id}
+              onClick={() => openStudent(s)}
+              className="group text-left"
             >
-              {f}
+              <Card className="transition-colors group-hover:border-black/20">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar initials={s.avatar} />
+                    <div>
+                      <p className="text-[15px] font-semibold" style={{ color: ink }}>
+                        {s.name}
+                      </p>
+                      <p className="text-[13px]" style={{ color: inkSoft }}>
+                        {s.handle}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} style={{ color: inkSoft }} />
+                </div>
+                <p className="mt-4 text-[13px]" style={{ color: inkSoft }}>
+                  {s.niche}
+                </p>
+
+                <div className="mt-3.5 flex items-center justify-between">
+                  <Badge month={s.monthNumber} />
+                  <span className="flex items-center gap-1.5 text-[12.5px]" style={{ color: inkSoft }}>
+                    <Clock size={13} />
+                    {s.nextCall}
+                  </span>
+                </div>
+              </Card>
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {filtered.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => openStudent(s)}
-            className="group text-left"
-          >
-            <Card className="transition-colors group-hover:border-black/20">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <Avatar initials={s.avatar} />
-                  <div>
-                    <p className="text-[15px] font-semibold" style={{ color: ink }}>
-                      {s.name}
-                    </p>
-                    <p className="text-[13px]" style={{ color: inkSoft }}>
-                      {s.handle}
-                    </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {filtered.map((s) => {
+            const since = daysSince(s.passiveSince);
+            const whatsappPhone = (s.phone || "").replace(/[^\d]/g, "");
+            const firstName = s.name.split(" ")[0];
+            const honorific = s.gender === "Kadın" ? "Hanım" : s.gender === "Erkek" ? "Bey" : "";
+            const greetingName = honorific ? `${firstName} ${honorific}` : firstName;
+            const reminderMessage = `Merhaba ${greetingName}, bir süredir koçluk programına ara vermiştik. Seni tekrar aramızda görmekten mutluluk duyarım — uygun olduğunda konuşalım mı?`;
+            const reminderLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(reminderMessage)}`;
+            return (
+              <Card key={s.id} className="opacity-90">
+                <button onClick={() => openStudent(s)} className="w-full text-left">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar initials={s.avatar} />
+                      <div>
+                        <p className="text-[15px] font-semibold" style={{ color: ink }}>
+                          {s.name}
+                        </p>
+                        <p className="text-[13px]" style={{ color: inkSoft }}>
+                          {s.handle}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight size={18} style={{ color: inkSoft }} />
                   </div>
-                </div>
-                <ChevronRight size={18} style={{ color: inkSoft }} />
-              </div>
-              <p className="mt-4 text-[13px]" style={{ color: inkSoft }}>
-                {s.niche}
-              </p>
+                </button>
 
-              <div className="mt-3.5 flex items-center justify-between">
-                <Badge month={s.monthNumber} />
-                <span className="flex items-center gap-1.5 text-[12.5px]" style={{ color: inkSoft }}>
-                  <Clock size={13} />
-                  {s.nextCall}
-                </span>
-              </div>
-            </Card>
-          </button>
-        ))}
-      </div>
+                <div className="mt-3.5 flex items-center justify-between">
+                  <span
+                    className="rounded-full px-2.5 py-1 text-[12px] font-medium"
+                    style={{ background: "#F4E7E5", color: "#B3453A" }}
+                  >
+                    {since === null ? "Pasif" : since === 0 ? "Bugün pasife alındı" : `${since} gündür pasif`}
+                  </span>
+                </div>
+
+                {s.passiveNote && (
+                  <p className="mt-2.5 text-[12.5px] leading-relaxed" style={{ color: inkSoft }}>
+                    Sebep: {s.passiveNote}
+                  </p>
+                )}
+
+                <div className="mt-3.5 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => reactivate(s)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[12.5px] font-medium transition-colors hover:bg-black/[0.03]"
+                    style={{ border: `1px solid ${line}`, color: ink }}
+                  >
+                    Tekrar Aktif Et
+                  </button>
+                  {whatsappPhone && (
+                    <a
+                      href={reminderLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[12.5px] font-medium text-white hover:opacity-90"
+                      style={{ background: green }}
+                    >
+                      <MessageCircle size={13} />
+                      Hatırlatma gönder
+                    </a>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {filtered.length === 0 && (
         <div className="py-20 text-center text-[14px]" style={{ color: inkSoft }}>
-          Aramanla eşleşen öğrenci bulunamadı.
+          {statusTab === "aktif" ? "Aramanla eşleşen öğrenci bulunamadı." : "Pasif öğrenci yok."}
         </div>
       )}
 
@@ -1746,6 +1840,114 @@ function ContentDeliveryDate({ student, onUpdateStudent }) {
 }
 
 /* ---------------------------------------------------------
+   Öğrenciyi pasife alma — sebep notu ile birlikte
+--------------------------------------------------------- */
+const PASSIVE_REASONS = [
+  "Ücret nedeniyle",
+  "Programa uyum sağlayamadı",
+  "Motivasyon eksikliği",
+  "Zaman ayıramıyor",
+  "Diğer",
+];
+
+function PassivateModal({ student, onClose, onConfirm }) {
+  const [reason, setReason] = useState(PASSIVE_REASONS[0]);
+  const [detail, setDetail] = useState("");
+
+  const handleConfirm = () => {
+    const note = reason === "Diğer" ? detail.trim() : detail.trim() ? `${reason} — ${detail.trim()}` : reason;
+    onConfirm(note);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: "rgba(31,27,29,0.4)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[440px] rounded-2xl bg-white p-6"
+        style={{ boxShadow: cardShadow }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <p className="text-[17px] font-semibold" style={{ color: ink }}>
+            {student.name} adlı öğrenciyi pasife al
+          </p>
+          <button onClick={onClose} style={{ color: inkSoft }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <p className="mb-4 text-[13px] leading-relaxed" style={{ color: inkSoft }}>
+          Bu öğrenci artık aktif öğrenci listesinde, takvim/planlama seçimlerinde ve dashboard
+          istatistiklerinde görünmeyecek. Kaydı ve geçmişi silinmez, "Pasif" sekmesinden istediğin zaman
+          tekrar aktif edebilirsin.
+        </p>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              Pasife alma sebebi
+            </label>
+            <div className="relative">
+              <select
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="w-full appearance-none rounded-xl px-3.5 py-2.5 pr-10 text-[14px] outline-none"
+                style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+              >
+                {PASSIVE_REASONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2"
+                style={{ color: inkSoft }}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: inkSoft }}>
+              {reason === "Diğer" ? "Sebep (zorunlu)" : "Ek not (opsiyonel)"}
+            </label>
+            <textarea
+              value={detail}
+              onChange={(e) => setDetail(e.target.value)}
+              rows={3}
+              placeholder={reason === "Diğer" ? "Kısaca sebebini yaz" : "İstersen kısa bir not ekle"}
+              className="w-full rounded-xl px-3.5 py-2.5 text-[14px] outline-none"
+              style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
+            />
+          </div>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-[14px] font-medium"
+            style={{ border: `1px solid ${line}`, color: ink }}
+          >
+            Vazgeç
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={reason === "Diğer" && !detail.trim()}
+            className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-[14px] font-medium text-white disabled:opacity-40"
+            style={{ background: "#B3453A" }}
+          >
+            Pasife al
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
    Student detail page
 --------------------------------------------------------- */
 function EditStudentModal({ student, onClose, onSave }) {
@@ -1907,7 +2109,10 @@ function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, ba
   const [fileLink, setFileLink] = useState("");
   const [loomLink, setLoomLink] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPassivateModal, setShowPassivateModal] = useState(false);
   const [editingDoc, setEditingDoc] = useState(false);
+
+  const isPassive = student.status === "pasif";
 
   const firstName = student.name.split(" ")[0];
   const honorific = student.gender === "Kadın" ? "Hanım" : student.gender === "Erkek" ? "Bey" : "";
@@ -1921,6 +2126,24 @@ function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, ba
     loomLink ? `\n\nAçıklama videosu:\n${loomLink}` : ""
   }`;
   const deliveryWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(deliveryMessage)}`;
+
+  const reminderMessage = `Merhaba ${greetingName}, bir süredir koçluk programına ara vermiştik. Seni tekrar aramızda görmekten mutluluk duyarım — uygun olduğunda konuşalım mı?`;
+  const reminderWaLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(reminderMessage)}`;
+
+  const handlePassivate = (note) => {
+    onUpdateStudent(student.id, {
+      status: "pasif",
+      passiveSince: TODAY_ISO,
+      passiveNote: note,
+    });
+    setShowPassivateModal(false);
+  };
+
+  const handleReactivate = () => {
+    if (window.confirm(`${student.name} adlı öğrenciyi tekrar aktif etmek istediğine emin misin?`)) {
+      onUpdateStudent(student.id, { status: "aktif", passiveSince: "", passiveNote: "" });
+    }
+  };
 
   return (
     <div className="mx-auto max-w-[900px] px-4 sm:px-6 md:px-10 py-6 md:py-10">
@@ -1952,6 +2175,25 @@ function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, ba
           <GhostButton icon={Pencil} onClick={() => setShowEditModal(true)}>
             Düzenle
           </GhostButton>
+          {isPassive ? (
+            <button
+              onClick={handleReactivate}
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-medium transition-colors hover:bg-black/[0.03]"
+              style={{ border: `1px solid ${line}`, color: green }}
+            >
+              <Check size={16} />
+              Tekrar Aktif Et
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowPassivateModal(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-medium transition-colors hover:bg-black/[0.03]"
+              style={{ border: `1px solid ${line}`, color: "#B3453A" }}
+            >
+              <CircleDot size={16} />
+              Pasife Al
+            </button>
+          )}
           <button
             onClick={() => {
               if (window.confirm(`${student.name} adlı öğrenciyi silmek istediğine emin misin? Bu işlem geri alınamaz.`)) {
@@ -1966,7 +2208,7 @@ function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, ba
           </button>
           <GhostButton icon={Phone}>{student.phone}</GhostButton>
           <GhostButton icon={Mail}>{student.email}</GhostButton>
-          {whatsappPhone ? (
+          {whatsappPhone && !isPassive ? (
             <a
               href={appointmentWaLink}
               target="_blank"
@@ -1977,6 +2219,17 @@ function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, ba
               <MessageCircle size={16} />
               Randevu iste (WhatsApp)
             </a>
+          ) : whatsappPhone && isPassive ? (
+            <a
+              href={reminderWaLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-medium text-white hover:opacity-90"
+              style={{ background: green }}
+            >
+              <MessageCircle size={16} />
+              Hatırlatma gönder (WhatsApp)
+            </a>
           ) : (
             <button
               disabled
@@ -1985,11 +2238,28 @@ function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, ba
               style={{ background: green }}
             >
               <MessageCircle size={16} />
-              Randevu iste (telefon eksik)
+              {isPassive ? "Hatırlatma (telefon eksik)" : "Randevu iste (telefon eksik)"}
             </button>
           )}
         </div>
       </div>
+
+      {isPassive && (
+        <div
+          className="mb-6 rounded-xl px-4 py-3.5"
+          style={{ background: "#F4E7E5", border: "1px solid #E3C6C1" }}
+        >
+          <p className="text-[13.5px] font-medium" style={{ color: "#B3453A" }}>
+            Bu öğrenci pasif
+            {student.passiveSince ? ` · ${daysSince(student.passiveSince)} gündür` : ""}
+          </p>
+          {student.passiveNote && (
+            <p className="mt-1 text-[13px]" style={{ color: "#8A392F" }}>
+              Sebep: {student.passiveNote}
+            </p>
+          )}
+        </div>
+      )}
 
       {showEditModal && (
         <EditStudentModal
@@ -1999,6 +2269,14 @@ function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, ba
             onUpdateStudent(student.id, updates);
             setShowEditModal(false);
           }}
+        />
+      )}
+
+      {showPassivateModal && (
+        <PassivateModal
+          student={student}
+          onClose={() => setShowPassivateModal(false)}
+          onConfirm={handlePassivate}
         />
       )}
 
@@ -2224,7 +2502,7 @@ function getCalendarWeek() {
   return days;
 }
 
-function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks, showToast }) {
+function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks }) {
   const [showPlanner, setShowPlanner] = useState(false);
   const [range, setRange] = useState("week"); // "week" | "all"
   const [events, setEvents] = useState([]);
@@ -2393,7 +2671,7 @@ function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTask
 
       {showPlanner && (
         <div className="mt-6">
-          <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} showToast={showToast} />
+          <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} />
         </div>
       )}
     </div>
@@ -2609,19 +2887,13 @@ function FinansPage({ payments }) {
   );
 }
 
-function PaymentsPage({ students, payments, onAddPayment, onUpdatePayment, onDeletePayment, showToast }) {
+function PaymentsPage({ students, payments, onAddPayment, showToast }) {
   const [studentId, setStudentId] = useState(String(students[0]?.id || ""));
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(TODAY_ISO);
   const [note, setNote] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-
-  const [editingId, setEditingId] = useState(null);
-  const [editAmount, setEditAmount] = useState("");
-  const [editDate, setEditDate] = useState("");
-  const [editNote, setEditNote] = useState("");
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const latestPerStudent = students.map((s) => {
     const studentPayments = payments.filter((p) => p.studentId === s.id).sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -2658,42 +2930,6 @@ function PaymentsPage({ students, payments, onAddPayment, onUpdatePayment, onDel
       "Ödeme kaydedildi",
       `${student.name} için ${formatTRDate(date)} tarihli ödeme eklendi. Sonraki yenileme: ${formatTRDate(nextDate)}.`
     );
-  };
-
-  const startEdit = (p) => {
-    setConfirmDeleteId(null);
-    setEditingId(p.id);
-    setEditAmount(String(p.amount));
-    setEditDate(p.date);
-    setEditNote(p.note || "");
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditAmount("");
-    setEditDate("");
-    setEditNote("");
-  };
-
-  const saveEdit = async (p) => {
-    if (!editAmount || !editDate) return;
-    const nextDate = addDaysISO(editDate, 30);
-    const ok = await onUpdatePayment?.(p.id, {
-      amount: Number(editAmount),
-      date: editDate,
-      note: editNote,
-      nextDate,
-    });
-    if (ok) {
-      showToast?.("Ödeme güncellendi", `${p.studentName} için kayıt güncellendi.`);
-      cancelEdit();
-    }
-  };
-
-  const confirmDelete = async (p) => {
-    await onDeletePayment?.(p.id);
-    setConfirmDeleteId(null);
-    showToast?.("Ödeme silindi", `${p.studentName} için ${formatTRDate(p.date)} tarihli kayıt silindi.`);
   };
 
   return (
@@ -2876,116 +3112,24 @@ function PaymentsPage({ students, payments, onAddPayment, onUpdatePayment, onDel
             filteredPayments.map((p, i) => (
               <div
                 key={p.id}
-                className="px-6 py-4"
+                className="flex items-center justify-between px-6 py-4"
                 style={{ borderTop: i === 0 ? "none" : `1px solid ${line}` }}
               >
-                {editingId === p.id ? (
-                  <div className="flex flex-col gap-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <input
-                        type="number"
-                        value={editAmount}
-                        onChange={(e) => setEditAmount(e.target.value)}
-                        placeholder="Tutar (₺)"
-                        className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
-                        style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
-                      />
-                      <input
-                        type="date"
-                        value={editDate}
-                        onChange={(e) => setEditDate(e.target.value)}
-                        className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
-                        style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
-                      />
-                      <input
-                        value={editNote}
-                        onChange={(e) => setEditNote(e.target.value)}
-                        placeholder="Not (opsiyonel)"
-                        className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none"
-                        style={{ border: `1px solid ${line}`, background: canvas, color: ink }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-[12px]" style={{ color: inkSoft }}>
-                        Sonraki yenileme: <span style={{ color: ink, fontWeight: 500 }}>{editDate ? formatTRDate(addDaysISO(editDate, 30)) : "—"}</span>
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={cancelEdit}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg"
-                          style={{ background: canvas, color: inkSoft }}
-                        >
-                          <X size={14} />
-                        </button>
-                        <button
-                          onClick={() => saveEdit(p)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-white"
-                          style={{ background: accent }}
-                        >
-                          <Check size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : confirmDeleteId === p.id ? (
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[13px]" style={{ color: ink }}>
-                      {p.studentName} — {formatTRDate(p.date)} tarihli ₺{p.amount.toLocaleString("tr-TR")} kayıt silinsin mi?
+                <div className="flex items-center gap-3">
+                  <CreditCard size={16} style={{ color: inkSoft }} />
+                  <div>
+                    <p className="text-[14px] font-medium" style={{ color: ink }}>
+                      {p.studentName}
                     </p>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <button
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="rounded-lg px-3 py-1.5 text-[12.5px] font-medium"
-                        style={{ background: canvas, color: inkSoft }}
-                      >
-                        Vazgeç
-                      </button>
-                      <button
-                        onClick={() => confirmDelete(p)}
-                        className="rounded-lg px-3 py-1.5 text-[12.5px] font-medium text-white"
-                        style={{ background: "#DC5B4E" }}
-                      >
-                        Sil
-                      </button>
-                    </div>
+                    <p className="text-[12.5px]" style={{ color: inkSoft }}>
+                      {formatTRDate(p.date)} · Sonraki: {formatTRDate(p.nextDate)}
+                      {p.note ? ` · ${p.note}` : ""}
+                    </p>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <CreditCard size={16} style={{ color: inkSoft }} />
-                      <div>
-                        <p className="text-[14px] font-medium" style={{ color: ink }}>
-                          {p.studentName}
-                        </p>
-                        <p className="text-[12.5px]" style={{ color: inkSoft }}>
-                          {formatTRDate(p.date)} · Sonraki: {formatTRDate(p.nextDate)}
-                          {p.note ? ` · ${p.note}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[14px] font-semibold" style={{ color: ink }}>
-                        ₺{p.amount.toLocaleString("tr-TR")}
-                      </span>
-                      <button
-                        onClick={() => startEdit(p)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg"
-                        style={{ color: inkSoft }}
-                        title="Düzenle"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(p.id)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg"
-                        style={{ color: inkSoft }}
-                        title="Sil"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                )}
+                </div>
+                <span className="text-[14px] font-semibold" style={{ color: ink }}>
+                  ₺{p.amount.toLocaleString("tr-TR")}
+                </span>
               </div>
             ))
           )}
@@ -3234,6 +3378,9 @@ const STUDENT_FIELD_MAP = {
   nextDeliveryDate: "next_delivery_date",
   notes: "notes",
   docLink: "doc_link",
+  status: "status",
+  passiveSince: "passive_since",
+  passiveNote: "passive_note",
 };
 
 function studentToDb(s) {
@@ -3419,35 +3566,6 @@ export default function App() {
     return saved;
   };
 
-  const updatePayment = async (id, updates) => {
-    const previous = payments.find((p) => p.id === id);
-    setPayments((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
-    const { error } = await supabase.from("payments").update(paymentToDb(updates)).eq("id", id);
-    if (error) {
-      if (previous) setPayments((prev) => prev.map((p) => (p.id === id ? previous : p)));
-      showToast("Kaydedilemedi", "Ödeme güncellenirken bir sorun oluştu.");
-      return false;
-    }
-    return true;
-  };
-
-  const deletePayment = async (id) => {
-    const removed = payments.find((p) => p.id === id);
-    const removedIndex = payments.findIndex((p) => p.id === id);
-    setPayments((prev) => prev.filter((p) => p.id !== id));
-    const { error } = await supabase.from("payments").delete().eq("id", id);
-    if (error) {
-      if (removed) {
-        setPayments((prev) => {
-          const next = [...prev];
-          next.splice(removedIndex, 0, removed);
-          return next;
-        });
-      }
-      showToast("Silinemedi", "Ödeme veritabanından silinemedi.");
-    }
-  };
-
   const setActive = (id) => {
     setSelectedStudentId(null);
     setPage(id);
@@ -3486,11 +3604,15 @@ export default function App() {
 
   const activeNavId = page === "student-detail" ? "students" : page;
 
+  // Pasife alınmış öğrenciler; takvim/planlama/ödeme formlarındaki seçim
+  // listelerinden ve dashboard istatistiklerinden dışarıda tutulur.
+  const activeStudents = students.filter((s) => s.status !== "pasif");
+
   let content;
   if (page === "dashboard")
     content = (
       <Dashboard
-        students={students}
+        students={activeStudents}
         payments={payments}
         tasksByPeriod={tasksByPeriod}
         setTasksByPeriod={setTasksByPeriod}
@@ -3501,7 +3623,14 @@ export default function App() {
       />
     );
   else if (page === "students")
-    content = <StudentsPage students={students} addStudent={addStudent} openStudent={openStudent} />;
+    content = (
+      <StudentsPage
+        students={students}
+        addStudent={addStudent}
+        openStudent={openStudent}
+        onUpdateStudent={updateStudent}
+      />
+    );
   else if (page === "student-detail")
     content = (
       <StudentDetail
@@ -3515,25 +3644,15 @@ export default function App() {
   else if (page === "calendar")
     content = (
       <CalendarPage
-        students={students}
+        students={activeStudents}
         tasksByPeriod={tasksByPeriod}
         setTasksByPeriod={setTasksByPeriod}
         scheduledTasks={scheduledTasks}
         setScheduledTasks={setScheduledTasks}
-        showToast={showToast}
       />
     );
   else if (page === "payments")
-    content = (
-      <PaymentsPage
-        students={students}
-        payments={payments}
-        onAddPayment={addPayment}
-        onUpdatePayment={updatePayment}
-        onDeletePayment={deletePayment}
-        showToast={showToast}
-      />
-    );
+    content = <PaymentsPage students={activeStudents} payments={payments} onAddPayment={addPayment} showToast={showToast} />;
   else if (page === "finans") content = <FinansPage payments={payments} />;
   else if (page === "settings") content = <SettingsPage showToast={showToast} />;
 
