@@ -2737,9 +2737,14 @@ function monthLabel(key) {
   return `${MONTHS_TR[m - 1]} ${y}`;
 }
 
-function FinansPage({ payments }) {
+function FinansPage({ payments, students }) {
   const currentMonthKey = monthKey(TODAY_ISO);
   const nextMonthKey = shiftMonthKey(currentMonthKey, 1);
+
+  // Pasif öğrenciler zaten alınmış tahsilatlarda görünmeye devam eder (gerçek gelir
+  // geçmişi), ama "bu ay/gelecek ay tahsil edilecek" tahminlerinden çıkarılır —
+  // pasif bir öğrenciden yeni ödeme beklenmiyor.
+  const passiveIds = new Set((students || []).filter((s) => s.status === "pasif").map((s) => s.id));
 
   const collectedThisMonth = payments.filter((p) => monthKey(p.date) === currentMonthKey);
   const collectedTotal = collectedThisMonth.reduce((s, p) => s + p.amount, 0);
@@ -2750,7 +2755,7 @@ function FinansPage({ payments }) {
       if (!acc[p.studentId] || acc[p.studentId].date < p.date) acc[p.studentId] = p;
       return acc;
     }, {})
-  );
+  ).filter((p) => !passiveIds.has(p.studentId));
 
   const dueThisMonth = latestPerStudent.filter((p) => monthKey(p.nextDate) === currentMonthKey);
   const dueTotal = dueThisMonth.reduce((s, p) => s + p.amount, 0);
@@ -3653,7 +3658,7 @@ export default function App() {
     );
   else if (page === "payments")
     content = <PaymentsPage students={activeStudents} payments={payments} onAddPayment={addPayment} showToast={showToast} />;
-  else if (page === "finans") content = <FinansPage payments={payments} />;
+  else if (page === "finans") content = <FinansPage payments={payments} students={students} />;
   else if (page === "settings") content = <SettingsPage showToast={showToast} />;
 
   return (
