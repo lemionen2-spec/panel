@@ -484,7 +484,7 @@ function findTimeConflicts(tasks) {
   return conflicts;
 }
 
-function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks }) {
+function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks, showToast }) {
   const [period, setPeriod] = useState("day");
   const [title, setTitle] = useState("");
   const [minutes, setMinutes] = useState("");
@@ -493,7 +493,7 @@ function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [schedStudentId, setSchedStudentId] = useState(String(students[0]?.id || ""));
   const [schedTitle, setSchedTitle] = useState("");
-  const [schedDate, setSchedDate] = useState(TODAY_ISO);
+  const [schedDate, setSchedDate] = useState(getTodayISO());
   const [schedMinutes, setSchedMinutes] = useState("30");
 
   const tasks = tasksByPeriod[period];
@@ -509,23 +509,39 @@ function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks
         })
       : tasks;
   const conflicts = period === "day" ? findTimeConflicts(tasks) : new Set();
-  const todaysScheduled = scheduledTasks.filter((t) => t.dueDate === TODAY_ISO && !t.done);
+  const todaysScheduled = scheduledTasks.filter((t) => t.dueDate === getTodayISO() && !t.done);
 
-  const toggle = (id) => {
+  const toggle = async (id) => {
+    const t = tasksByPeriod[period].find((x) => x.id === id);
+    if (!t) return;
     setTasksByPeriod((prev) => ({
       ...prev,
-      [period]: prev[period].map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
+      [period]: prev[period].map((x) => (x.id === id ? { ...x, done: !x.done } : x)),
     }));
-    const t = tasksByPeriod[period].find((x) => x.id === id);
-    if (t) supabase.from("planner_tasks").update({ done: !t.done }).eq("id", id);
+    const { error } = await supabase.from("planner_tasks").update({ done: !t.done }).eq("id", id);
+    if (error) {
+      // Veritabanına yazılamadı — ekranı eski haline döndür ki görünen durum gerçeği yansıtsın.
+      setTasksByPeriod((prev) => ({
+        ...prev,
+        [period]: prev[period].map((x) => (x.id === id ? { ...x, done: t.done } : x)),
+      }));
+      showToast?.("Kaydedilemedi", "Görev durumu veritabanına yazılamadı.");
+    }
   };
 
-  const deleteTask = (id) => {
+  const deleteTask = async (id) => {
+    const t = tasksByPeriod[period].find((x) => x.id === id);
     setTasksByPeriod((prev) => ({
       ...prev,
-      [period]: prev[period].filter((t) => t.id !== id),
+      [period]: prev[period].filter((x) => x.id !== id),
     }));
-    supabase.from("planner_tasks").delete().eq("id", id);
+    const { error } = await supabase.from("planner_tasks").delete().eq("id", id);
+    if (error && t) {
+      // Silme veritabanında başarısız oldu — görevi listeye geri koy, yoksa sayfa
+      // yenilenince "geri geldi" gibi görünen kafa karıştırıcı davranış tekrarlanır.
+      setTasksByPeriod((prev) => ({ ...prev, [period]: [...prev[period], t] }));
+      showToast?.("Silinemedi", "Görev veritabanından silinemedi — izin sorunu olabilir.");
+    }
   };
 
   const addTask = async () => {
@@ -548,15 +564,25 @@ function WorkPlanner({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks
     setTaskTime("");
   };
 
-  const toggleScheduled = (id) => {
-    setScheduledTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+  const toggleScheduled = async (id) => {
     const t = scheduledTasks.find((x) => x.id === id);
-    if (t) supabase.from("scheduled_tasks").update({ done: !t.done }).eq("id", id);
+    if (!t) return;
+    setScheduledTasks((prev) => prev.map((x) => (x.id === id ? { ...x, done: !x.done } : x)));
+    const { error } = await supabase.from("scheduled_tasks").update({ done: !t.done }).eq("id", id);
+    if (error) {
+      setScheduledTasks((prev) => prev.map((x) => (x.id === id ? { ...x, done: t.done } : x)));
+      showToast?.("Kaydedilemedi", "Görev durumu veritabanına yazılamadı.");
+    }
   };
 
-  const deleteScheduled = (id) => {
-    setScheduledTasks((prev) => prev.filter((t) => t.id !== id));
-    supabase.from("scheduled_tasks").delete().eq("id", id);
+  const deleteScheduled = async (id) => {
+    const t = scheduledTasks.find((x) => x.id === id);
+    setScheduledTasks((prev) => prev.filter((x) => x.id !== id));
+    const { error } = await supabase.from("scheduled_tasks").delete().eq("id", id);
+    if (error && t) {
+      setScheduledTasks((prev) => [...prev, t]);
+      showToast?.("Silinemedi", "Görev veritabanından silinemedi — izin sorunu olabilir.");
+    }
   };
 
   const addScheduledTask = async () => {
@@ -985,20 +1011,20 @@ function Dashboard({ students, payments, tasksByPeriod, setTasksByPeriod, schedu
   }, []);
 
   const collectedThisMonth = payments
-    .filter((p) => monthKey(p.date) === monthKey(TODAY_ISO))
+    .filter((p) => monthKey(p.date) === monthKey(getTodayISO()))
     .reduce((s, p) => s + p.amount, 0);
 
   const dueReports = students
-    .filter((s) => s.nextDeliveryDate && s.nextDeliveryDate <= TODAY_ISO)
+    .filter((s) => s.nextDeliveryDate && s.nextDeliveryDate <= getTodayISO())
     .sort((a, b) => (a.nextDeliveryDate < b.nextDeliveryDate ? -1 : 1));
-  const dueToday = dueReports.filter((s) => s.nextDeliveryDate === TODAY_ISO);
+  const dueToday = dueReports.filter((s) => s.nextDeliveryDate === getTodayISO());
 
   const stats = [
     { label: "Aktif Öğrenci", value: String(students.length), sub: "Toplam kayıtlı öğrenci", positive: true, arc: accent },
     {
       label: "Bu Ay Koçluk Geliri",
       value: `₺${collectedThisMonth.toLocaleString("tr-TR")}`,
-      sub: `${monthLabel(monthKey(TODAY_ISO))}`,
+      sub: `${monthLabel(monthKey(getTodayISO()))}`,
       positive: true,
       arc: accent,
     },
@@ -1043,7 +1069,7 @@ function Dashboard({ students, payments, tasksByPeriod, setTasksByPeriod, schedu
       </div>
 
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} />
+        <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} showToast={showToast} />
         <QuickMessageTemplates showToast={showToast} />
       </div>
 
@@ -1093,7 +1119,7 @@ function Dashboard({ students, payments, tasksByPeriod, setTasksByPeriod, schedu
                       </p>
                       <p className="text-[12.5px]" style={{ color: inkSoft }}>
                         Teslim: {formatTRDate(s.nextDeliveryDate)}
-                        {s.nextDeliveryDate < TODAY_ISO ? " · gecikti" : ""}
+                        {s.nextDeliveryDate < getTodayISO() ? " · gecikti" : ""}
                       </p>
                     </div>
                   </div>
@@ -1353,7 +1379,7 @@ function AddStudentModal({ onClose, onAdd }) {
 
 function daysSince(dateStr) {
   if (!dateStr) return null;
-  const ms = new Date(TODAY_ISO + "T00:00:00") - new Date(dateStr + "T00:00:00");
+  const ms = new Date(getTodayISO() + "T00:00:00") - new Date(dateStr + "T00:00:00");
   return Math.max(0, Math.round(ms / 86400000));
 }
 
@@ -2133,7 +2159,7 @@ function StudentDetail({ student, payments, onUpdateStudent, onDeleteStudent, ba
   const handlePassivate = (note) => {
     onUpdateStudent(student.id, {
       status: "pasif",
-      passiveSince: TODAY_ISO,
+      passiveSince: getTodayISO(),
       passiveNote: note,
     });
     setShowPassivateModal(false);
@@ -2502,7 +2528,7 @@ function getCalendarWeek() {
   return days;
 }
 
-function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks }) {
+function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTasks, setScheduledTasks, showToast }) {
   const [showPlanner, setShowPlanner] = useState(false);
   const [range, setRange] = useState("week"); // "week" | "all"
   const [events, setEvents] = useState([]);
@@ -2671,7 +2697,7 @@ function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTask
 
       {showPlanner && (
         <div className="mt-6">
-          <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} />
+          <WorkPlanner students={students} tasksByPeriod={tasksByPeriod} setTasksByPeriod={setTasksByPeriod} scheduledTasks={scheduledTasks} setScheduledTasks={setScheduledTasks} showToast={showToast} />
         </div>
       )}
     </div>
@@ -2682,7 +2708,13 @@ function CalendarPage({ students, tasksByPeriod, setTasksByPeriod, scheduledTask
    Ödeme tarihi yardımcıları — havale/EFT sonrası 30 gün üzerinden
    bir sonraki yenileme tarihi hesaplanır
 --------------------------------------------------------- */
-const TODAY_ISO = new Date().toISOString().slice(0, 10);
+// "Bugün" sabit bir değer DEĞİL — her çağrıldığında taze hesaplanır. Panel sekmesi
+// gece yarısını geçtikten sonra da açık kalabildiği için (sayfa yeniden yüklenmeden),
+// eskiden burada const olarak dondurulan tarih gün değişse bile değişmiyordu — bu da
+// "Bu Ay Koçluk Geliri" gibi kartların bir önceki ayda takılı kalmasına yol açıyordu.
+function getTodayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
 const MONTHS_TR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 
 function addDaysISO(dateStr, days) {
@@ -2697,7 +2729,7 @@ function formatTRDate(dateStr) {
 }
 
 function daysUntil(dateStr) {
-  const ms = new Date(dateStr + "T00:00:00") - new Date(TODAY_ISO + "T00:00:00");
+  const ms = new Date(dateStr + "T00:00:00") - new Date(getTodayISO() + "T00:00:00");
   return Math.round(ms / 86400000);
 }
 
@@ -2738,7 +2770,7 @@ function monthLabel(key) {
 }
 
 function FinansPage({ payments, students }) {
-  const currentMonthKey = monthKey(TODAY_ISO);
+  const currentMonthKey = monthKey(getTodayISO());
   const nextMonthKey = shiftMonthKey(currentMonthKey, 1);
 
   // Pasif öğrenciler zaten alınmış tahsilatlarda görünmeye devam eder (gerçek gelir
@@ -2895,7 +2927,7 @@ function FinansPage({ payments, students }) {
 function PaymentsPage({ students, payments, onAddPayment, showToast }) {
   const [studentId, setStudentId] = useState(String(students[0]?.id || ""));
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(TODAY_ISO);
+  const [date, setDate] = useState(getTodayISO());
   const [note, setNote] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -3496,6 +3528,24 @@ export default function App() {
   const [scheduledTasks, setScheduledTasks] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [, forceRefresh] = useState(0);
+
+  // Sekme gece yarısını geçtikten sonra da açık kalabiliyor — bu durumda "bugün"e
+  // bağlı kartlar (Bu Ay Koçluk Geliri, yenileme/teslim tarihleri, pasiflik süresi vb.)
+  // yeni bir render tetiklenmeden tazelenmez. Sekmeye geri dönüldüğünde (görünür hale
+  // geldiğinde veya pencere odaklandığında) tüm ağacı yeniden render ettirerek bu
+  // kartların güncel tarihle hesaplanmasını sağlıyoruz.
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === "visible") forceRefresh((n) => n + 1);
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -3654,6 +3704,7 @@ export default function App() {
         setTasksByPeriod={setTasksByPeriod}
         scheduledTasks={scheduledTasks}
         setScheduledTasks={setScheduledTasks}
+        showToast={showToast}
       />
     );
   else if (page === "payments")
