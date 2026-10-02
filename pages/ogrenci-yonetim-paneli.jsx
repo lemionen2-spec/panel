@@ -2764,6 +2764,22 @@ function shiftMonthKey(key, delta) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
+// Bir öğrencinin ödeme döngüsünü (30 günlük periyotlarla) ileriye doğru zincirleyip
+// hedef aya (targetMonthKey) denk gelen yenileme tarihini bulur. Sabit 30 günlük
+// döngü ay sınırlarını kaydırdığı için (örn. 1 Ekim ödemesi → 31 Ekim yenileme,
+// bir sonraki yenileme de 30 Kasım'a denk gelir), tek adımlık nextDate yerine
+// döngüyü hedef aya ulaşana kadar ileri sarmak gerekir.
+function projectCycleIntoMonth(startDate, targetMonthKey, maxCycles = 24) {
+  let d = startDate;
+  for (let i = 0; i < maxCycles; i++) {
+    const k = monthKey(d);
+    if (k === targetMonthKey) return d;
+    if (k > targetMonthKey) return null; // hedef ayı geçtik, bu döngüde denk gelmiyor
+    d = addDaysISO(d, 30);
+  }
+  return null;
+}
+
 function monthLabel(key) {
   const [y, m] = key.split("-").map(Number);
   return `${MONTHS_TR[m - 1]} ${y}`;
@@ -2792,7 +2808,11 @@ function FinansPage({ payments, students }) {
   const dueThisMonth = latestPerStudent.filter((p) => monthKey(p.nextDate) === currentMonthKey);
   const dueTotal = dueThisMonth.reduce((s, p) => s + p.amount, 0);
 
-  const dueNextMonth = latestPerStudent.filter((p) => monthKey(p.nextDate) === nextMonthKey);
+  // "Gelecek ay tahmini gelir": öğrencinin bir sonraki yenilemesi bu ay içindeyse,
+  // döngüyü bir adım daha ileri sararak gelecek ayda denk gelen yenilemeyi buluyoruz.
+  // Böylece örn. 1 Ekim'de ödeyen bir öğrenci (yenileme 31 Ekim → 30 Kasım) Kasım
+  // tahminine doğru şekilde dahil olur.
+  const dueNextMonth = latestPerStudent.filter((p) => projectCycleIntoMonth(p.nextDate, nextMonthKey) !== null);
   const nextMonthTotal = dueNextMonth.reduce((s, p) => s + p.amount, 0);
 
   return (
